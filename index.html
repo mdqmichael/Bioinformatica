@@ -3,16 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NCBI BioInfo Studio — Automação FASTA, ORFfinder, CD-Search & Primers PCR (PPGAD/UFT)</title>
+  <title>APP_NCBI_BIOINFORMATICA — Criador: Michael Oliveira (PPGAD/UFT)</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: 'Inter', sans-serif;
-      background-color: #0b1120;
-      color: #e2e8f0;
+      background-color: #f4f7f9;
+      color: #0f172a;
     }
     .mono {
       font-family: 'JetBrains Mono', monospace;
@@ -27,92 +28,98 @@
       height: 8px;
     }
     .custom-scroll::-webkit-scrollbar-track {
-      background: #0f172a;
+      background: #e2e8f0;
     }
     .custom-scroll::-webkit-scrollbar-thumb {
-      background: #334155;
+      background: #94a3b8;
       border-radius: 4px;
     }
     .custom-scroll::-webkit-scrollbar-thumb:hover {
-      background: #475569;
+      background: #64748b;
     }
     .glass-card {
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid rgba(51, 65, 85, 0.75);
-      backdrop-filter: blur(8px);
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
     }
     .tab-active {
-      background: linear-gradient(135deg, #2563eb 0%, #0284c7 100%);
+      background-color: #003366;
       color: #ffffff;
-      border-color: #38bdf8;
-      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+      border-color: #003366;
+      box-shadow: 0 2px 6px rgba(0, 51, 102, 0.2);
     }
     .tab-inactive {
-      background: #1e293b;
-      color: #94a3b8;
-      border-color: #334155;
+      background: #f1f5f9;
+      color: #334155;
+      border-color: #cbd5e1;
     }
     .tab-inactive:hover {
-      background: #334155;
-      color: #f8fafc;
+      background: #e2e8f0;
+      color: #003366;
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col selection:bg-sky-500 selection:text-white">
+<body class="min-h-screen flex flex-col selection:bg-[#003366] selection:text-slate-900">
 
   <!-- Toast Notification -->
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 hidden">
-    <div class="bg-emerald-600 text-white px-4 py-3 rounded-xl shadow-2xl border border-emerald-400 flex items-center gap-3 text-sm font-semibold">
+    <div class="bg-[#006633] text-white px-4 py-3 rounded-xl shadow-2xl border border-emerald-400 flex items-center gap-3 text-sm font-semibold">
       <span id="toast-icon">✅</span>
       <span id="toast-msg">Operação concluída com sucesso!</span>
     </div>
   </div>
 
   <!-- Top Academic Header -->
-  <header class="bg-slate-900/95 border-b border-slate-800 sticky top-0 z-40 backdrop-blur-md">
+  <header class="bg-white border-b-2 border-[#003366] shadow-sm sticky top-0 z-40 backdrop-blur-md">
     <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
       <div class="flex items-center gap-3">
-        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-600 via-sky-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-sky-500/20 text-xl font-extrabold text-white">
+        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-[#003366] to-[#006633] flex items-center justify-center shadow-lg shadow-sky-500/20 text-xl font-extrabold text-white">
           🧬
         </div>
         <div>
           <div class="flex items-center gap-2 flex-wrap">
-            <h1 class="text-lg md:text-xl font-extrabold tracking-tight text-white">NCBI BioInfo Studio <span class="text-sky-400 font-semibold text-sm">v3.0 European Senior Ed.</span></h1>
-            <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">PPGAD • UFT</span>
+            <h1 class="text-lg md:text-xl font-extrabold tracking-tight text-[#003366]">APP_NCBI_BIOINFORMATICA <span class="text-[#006633] font-bold text-sm">• Criador: Michael Oliveira</span></h1>
+            <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[#006633]/10 text-[#006633] border border-[#006633]/30">PPGAD • UFT</span>
           </div>
-          <p class="text-xs text-slate-400">Pipeline Integrado: <strong class="text-slate-200">1. Busca & FASTA</strong> ➔ <strong class="text-slate-200">2. ORFfinder (6-Frames)</strong> ➔ <strong class="text-slate-200">3. CD-Search (wrpsb.cgi)</strong> ➔ <strong class="text-slate-200">4. Primers PCR</strong></p>
+          <p class="text-xs text-slate-600">Pipeline Integrado: <strong class="text-slate-800">1. Busca & FASTA</strong> ➔ <strong class="text-slate-800">2. ORFfinder (6-Frames)</strong> ➔ <strong class="text-slate-800">3. CD-Search (wrpsb.cgi)</strong> ➔ <strong class="text-slate-800">4. Primers PCR</strong></p>
         </div>
       </div>
 
       <div class="flex items-center gap-2 flex-wrap">
-        <a href="https://docs.google.com/spreadsheets/d/16ZS5rJ9Y872LZh3MVUm8AtFv1RcPEriln3HbSaUTnOE/edit" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-semibold flex items-center gap-1.5 transition">
+        <a href="https://docs.google.com/spreadsheets/d/16ZS5rJ9Y872LZh3MVUm8AtFv1RcPEriln3HbSaUTnOE/edit" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-[#006633]/10 hover:bg-[#006633]/20 text-[#006633] border border-emerald-500/40 text-xs font-semibold flex items-center gap-1.5 transition">
           <span>📊</span> Abrir Planilha Google Sheets Oficial
         </a>
-        <a href="https://www.ncbi.nlm.nih.gov/nuccore/?term=V1ar%20and%20Complete%20CDS" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition">
+        <a href="https://www.ncbi.nlm.nih.gov/nuccore/?term=V1ar%20and%20Complete%20CDS" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-[#003366] border border-slate-300 text-xs font-semibold flex items-center gap-1.5 transition">
           <span>🌐</span> NCBI V1aR (66 Hits)
         </a>
-        <button id="btn-export-report" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow transition">
+        <button id="btn-download-app-html" type="button" class="px-3 py-1.5 rounded-lg bg-[#006633] hover:bg-[#004d26] text-white text-xs font-semibold flex items-center gap-1.5 shadow transition" title="Baixe o arquivo .html para rodar direto no Chrome ou GitHub Pages">
+          <span>💾</span> Baixar App (.html)
+        </button>
+        <button id="btn-export-report" class="px-3 py-1.5 rounded-lg bg-[#003366] hover:bg-[#002244] text-white text-xs font-semibold flex items-center gap-1.5 shadow transition">
           <span>📄</span> Baixar Relatório Colorido (.doc)
         </button>
       </div>
     </div>
 
-    <!-- Navigation Tabs -->
-    <div class="max-w-7xl mx-auto px-4 pb-2.5 pt-1 flex items-center gap-2 overflow-x-auto custom-scroll">
-      <button id="nav-tab-batch" data-tab="batch" class="nav-tab tab-active px-3.5 py-2 rounded-lg text-xs md:text-sm font-semibold border transition whitespace-nowrap flex items-center gap-2">
-        <span>🗂️</span> 1. Busca em Lote & Matriz (10+ Espécies)
+  </header>
+
+  <!-- Floating Pill Navigation Bar -->
+  <nav class="sticky top-[68px] z-30 max-w-7xl w-full mx-auto px-4 pt-3">
+    <div class="bg-white/95 backdrop-blur-md border border-slate-300 rounded-2xl p-1.5 shadow-md flex items-center gap-1.5 overflow-x-auto custom-scroll">
+      <button id="nav-tab-batch" data-tab="batch" class="nav-tab tab-active px-3.5 py-2 rounded-xl text-xs md:text-sm font-semibold border transition whitespace-nowrap flex items-center gap-2">
+        <span>🔍</span> 1. Pesquisar no NCBI
       </button>
-      <button id="nav-tab-pipeline" data-tab="pipeline" class="nav-tab tab-inactive px-3.5 py-2 rounded-lg text-xs md:text-sm font-semibold border transition whitespace-nowrap flex items-center gap-2">
-        <span>🔬</span> 2. Inspetor 3 Funções: FASTA ➔ ORFfinder ➔ CD-Search
+      <button id="nav-tab-pipeline" data-tab="pipeline" class="nav-tab tab-inactive px-3.5 py-2 rounded-xl text-xs md:text-sm font-semibold border transition whitespace-nowrap flex items-center gap-2">
+        <span>✨</span> 2. Gerar Formatação (FASTA • ORF • Domínio)
       </button>
-      <button id="nav-tab-pcr" data-tab="pcr" class="nav-tab tab-inactive px-3.5 py-2 rounded-lg text-xs md:text-sm font-semibold border transition whitespace-nowrap flex items-center gap-2">
-        <span>🧪</span> 3. Laboratório de Primers PCR & Gel In-Silico
+      <button id="nav-tab-pcr" data-tab="pcr" class="nav-tab tab-inactive px-3.5 py-2 rounded-xl text-xs md:text-sm font-semibold border transition whitespace-nowrap flex items-center gap-2">
+        <span>🧪</span> 3. Desenhar Primers PCR
       </button>
-      <button id="nav-tab-sheets" data-tab="sheets" class="nav-tab tab-inactive px-3.5 py-2 rounded-lg text-xs md:text-sm font-semibold border transition whitespace-nowrap flex items-center gap-2">
-        <span>⚡</span> 4. Fórmulas Google Sheets & Script F12 (wrpsb.cgi)
+      <button id="nav-tab-sheets" data-tab="sheets" class="nav-tab tab-inactive px-3.5 py-2 rounded-xl text-xs md:text-sm font-semibold border transition whitespace-nowrap flex items-center gap-2">
+        <span>🔗</span> 4. Links Diretos (URL) & Planilha
       </button>
     </div>
-  </header>
+  </nav>
 
   <!-- Main Workspace Container -->
   <main class="max-w-7xl w-full mx-auto px-4 py-6 flex-1 space-y-6">
@@ -121,113 +128,128 @@
     <!-- TAB 1: BUSCA EM LOTE & MATRIZ CONSOLIDADA DE ESPÉCIES     -->
     <!-- ========================================================= -->
     <section id="view-batch" class="space-y-6">
-      <!-- Top Summary KPI Cards -->
+      <!-- Top Summary KPI Cards (100% Dynamic per Search) -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div class="glass-card rounded-xl p-4">
-          <div class="text-xs text-slate-400 font-medium">Espécies Carregadas no Lote</div>
-          <div id="kpi-total-species" class="text-2xl font-extrabold text-white mt-1">12 Espécies</div>
-          <div class="text-xs text-emerald-400 mt-1">10 Animais (V1aR) + 2 Plantas (FLC)</div>
+          <div class="text-xs text-slate-600 font-medium">Registros na Pesquisa Atual</div>
+          <div id="kpi-total-species" class="text-2xl font-extrabold text-slate-900 mt-1">12 Registros</div>
+          <div id="kpi-query-sub" class="text-xs text-[#006633] mt-1 truncate">Base inicial carregada</div>
         </div>
         <div class="glass-card rounded-xl p-4">
-          <div class="text-xs text-slate-400 font-medium">Janelas de Leitura (ORFfinder)</div>
-          <div id="kpi-valid-orfs" class="text-2xl font-extrabold text-emerald-400 mt-1">100% Frame +1</div>
-          <div class="text-xs text-slate-400 mt-1">Início ATG • Múltiplo exato de 3 nt</div>
+          <div class="text-xs text-slate-600 font-medium">Janelas de Leitura (ORFfinder)</div>
+          <div id="kpi-valid-orfs" class="text-2xl font-extrabold text-[#006633] mt-1">100% Frame +1</div>
+          <div id="kpi-orfs-sub" class="text-xs text-slate-600 mt-1">Média: 1147 bp (381 aa)</div>
         </div>
         <div class="glass-card rounded-xl p-4">
-          <div class="text-xs text-slate-400 font-medium">Domínio Principal (CD-Search)</div>
-          <div id="kpi-avg-domain" class="text-2xl font-extrabold text-sky-400 mt-1">7tmA_V1aR / MADS</div>
-          <div class="text-xs text-slate-400 mt-1">Mapeado via wrpsb.cgi (CDD PSSMs)</div>
+          <div class="text-xs text-slate-600 font-medium">Domínio / Região Mapeada</div>
+          <div id="kpi-avg-domain" class="text-2xl font-extrabold text-[#003366] mt-1 truncate">7tmA_V1aR</div>
+          <div id="kpi-domain-sub" class="text-xs text-slate-600 mt-1">Mapeável via wrpsb.cgi</div>
         </div>
         <div class="glass-card rounded-xl p-4">
-          <div class="text-xs text-slate-400 font-medium">Integração NCBI E-utilities</div>
-          <div id="kpi-api-status" class="text-2xl font-extrabold text-amber-300 mt-1">Ativa (REST + Local)</div>
-          <div class="text-xs text-slate-400 mt-1">Busca múltipla sem uso de mouse</div>
+          <div class="text-xs text-slate-600 font-medium">Status da Consulta NCBI</div>
+          <div id="kpi-api-status" class="text-2xl font-extrabold text-amber-800 mt-1">Pronto (REST)</div>
+          <div id="kpi-api-sub" class="text-xs text-slate-600 mt-1">Aguardando nova pesquisa</div>
         </div>
       </div>
 
       <!-- Batch Search & Multi-Species Automation Panel -->
       <div class="glass-card rounded-2xl p-5 space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
           <div>
-            <h2 class="text-base md:text-lg font-bold text-white flex items-center gap-2">
-              <span>🚀</span> Motor de Busca em Lote no NCBI (Multi-Espécies & Novos Treinos)
+            <h2 class="text-base md:text-lg font-bold text-slate-900 flex items-center gap-2">
+              <span>🔍</span> Central de Pesquisa no NCBI (Expressão Livre ou Lista em Lote)
             </h2>
-            <p class="text-xs text-slate-400">Pesquise várias espécies ou códigos de acesso de uma só vez diretamente na API E-utilities do NCBI ou carregue os lotes oficiais das aulas do Prof. Dr. Horllys.</p>
+            <p class="text-xs text-slate-600">Escolha entre buscar por uma <strong>expressão booleana completa</strong> (Modo A) ou por uma <strong>lista de várias espécies/acessos</strong> (Modo B). A tabela e os indicadores abaixo são atualizados automaticamente a cada pesquisa.</p>
           </div>
           <div class="flex items-center gap-2 flex-wrap">
-            <button id="btn-preset-animals" class="px-3 py-1.5 rounded-lg bg-sky-600/20 hover:bg-sky-600/30 text-sky-300 border border-sky-500/40 text-xs font-semibold transition">
-              🐾 Lote 10 Animais (V1aR)
+            <button id="btn-clear-table" type="button" class="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 text-xs font-semibold transition">
+              🧹 Limpar Tela
             </button>
-            <button id="btn-preset-plants" class="px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-semibold transition">
-              🌱 Lote Plantas (FLC / CaFLC)
-            </button>
-            <button id="btn-preset-all" class="px-3 py-1.5 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 text-xs font-semibold transition">
-              📚 Carregar Todos (12)
+            <button id="btn-reset-defaults" type="button" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 text-xs font-semibold transition">
+              🔄 Carregar Exemplo Padrão
             </button>
           </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <div class="lg:col-span-5 space-y-3">
-            <div>
-              <label for="batch-gene-query" class="block text-xs font-semibold text-slate-300 mb-1">Termo / Gene Alvo no NCBI Nucleotide:</label>
-              <div class="flex gap-2">
-                <input id="batch-gene-query" type="text" value="V1ar and Complete CDS" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500 mono" placeholder="Ex: V1ar and Complete CDS ou AVPR1A complete cds" />
-                <a id="link-dynamic-ncbi-query" href="https://www.ncbi.nlm.nih.gov/nuccore/?term=V1ar%20and%20Complete%20CDS" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 text-xs font-semibold whitespace-nowrap flex items-center">
-                  Abrir NCBI ↗
+          <div class="lg:col-span-6 space-y-3">
+            <!-- MODO A: Busca por Expressao Livre -->
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <label for="batch-gene-query" class="text-xs font-bold text-[#003366]">MODO A — Busca por Expressão Livre no NCBI Nucleotide</label>
+                <div class="flex items-center gap-1.5">
+                  <label for="batch-retmax" class="text-[11px] text-slate-600">Máx. registros:</label>
+                  <select id="batch-retmax" class="bg-white border border-slate-300 rounded px-1.5 py-0.5 text-[11px] text-[#003366] font-bold">
+                    <option value="1">1</option>
+                    <option value="5" selected>5</option>
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                  </select>
+                </div>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <input id="batch-gene-query" type="text" value="" class="flex-1 min-w-[200px] bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-[#003366] mono" placeholder='Ex: "Coffea arabica"[Organism] AND flower[All Fields] AND "complete cds"[Title]' />
+                <button id="btn-search-exact-query" type="button" class="px-3.5 py-2 rounded-lg bg-[#006633] hover:bg-[#004d26] text-white text-xs font-bold whitespace-nowrap transition shadow">
+                  🔍 Buscar Expressão
+                </button>
+                <a id="link-dynamic-ncbi-query" href="https://www.ncbi.nlm.nih.gov/nuccore/" target="_blank" rel="noopener noreferrer" class="px-2.5 py-2 rounded-lg bg-white hover:bg-slate-100 text-[#003366] border border-slate-300 text-xs font-semibold whitespace-nowrap flex items-center">
+                  NCBI ↗
                 </a>
+              </div>
+              <div class="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                <label class="inline-flex items-center gap-1.5 text-slate-700 cursor-pointer">
+                  <input id="chk-append-results" type="checkbox" class="rounded border-slate-300 bg-white accent-[#003366]" />
+                  Acumular com registros anteriores (se desmarcado, limpa a tela antes)
+                </label>
+                <button id="btn-fill-example-coffee" type="button" class="text-[#003366] hover:underline font-semibold">
+                  Testar exemplo: Coffea arabica flower
+                </button>
               </div>
             </div>
 
-            <div>
-              <label for="batch-species-input" class="block text-xs font-semibold text-slate-300 mb-1">Lista de Espécies ou Acessos GenBank (1 por linha para busca simultânea):</label>
-              <textarea id="batch-species-input" rows="5" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 mono focus:outline-none focus:border-sky-500" placeholder="Ovis aries&#10;Macaca fascicularis&#10;Sus scrofa&#10;Bos taurus&#10;Gallus gallus">Ovis aries
-Macaca fascicularis
-Sus scrofa
-Canis lupus
-Callorhinchus milii
-Triakis scyllium
-Amphiprion ocellaris
-Mus musculus
-Rattus norvegicus
-Homo sapiens</textarea>
-            </div>
-
-            <div class="flex flex-wrap gap-2">
-              <button id="btn-run-batch-ncbi" class="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 text-white text-xs font-bold shadow-lg shadow-sky-600/25 transition flex items-center justify-center gap-2">
-                <span>⚡</span> Executar Automação em Lote (FASTA + ORFfinder + Domínios)
-              </button>
-              <button id="btn-open-batch-cdd" class="px-3 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition flex items-center gap-1.5" title="Copia o Multi-FASTA de todas as espécies e abre o NCBI Batch CD-Search">
-                <span>🧬</span> Enviar Lote ao Batch CD-Search
-              </button>
+            <!-- MODO B: Busca em Lote por Lista -->
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <label for="batch-species-input" class="text-xs font-bold text-[#003366]">MODO B — Lista de Espécies ou Acessos GenBank (1 por linha)</label>
+                <span class="text-[11px] text-slate-500">Atualiza após cada busca</span>
+              </div>
+              <textarea id="batch-species-input" rows="4" class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-xs text-slate-800 mono focus:outline-none focus:border-[#003366]" placeholder="Digite espécies ou códigos de acesso (1 por linha)&#10;Ex:&#10;HM856595.1&#10;HQ845334.1&#10;Ovis aries"></textarea>
+              <div class="flex flex-wrap gap-2">
+                <button id="btn-run-batch-ncbi" class="flex-1 px-4 py-2 rounded-xl bg-[#003366] hover:bg-[#002244] text-white text-xs font-bold shadow transition flex items-center justify-center gap-2">
+                  <span>⚡</span> Buscar Lista em Lote (FASTA + ORFfinder)
+                </button>
+                <button id="btn-open-batch-cdd" class="px-3 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300 text-xs font-bold transition flex items-center gap-1.5" title="Copia o Multi-FASTA atual e abre o NCBI Batch CD-Search">
+                  <span>🧬</span> Batch CD-Search
+                </button>
+              </div>
             </div>
           </div>
 
           <!-- Right Column: Add Custom Species / Paste Raw FASTA for Future Classes -->
-          <div class="lg:col-span-7 bg-slate-900/70 border border-slate-800 rounded-xl p-4 space-y-3">
+          <div class="lg:col-span-6 bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3 flex flex-col justify-between">
             <div class="flex items-center justify-between">
-              <h3 class="text-xs font-bold uppercase tracking-wider text-sky-400">➕ Adicionar Nova Espécie ou Colar FASTA Bruto (Para Novas Aulas)</h3>
-              <span class="text-[11px] text-slate-400">Calcula ORF +1, Start/Stop e Domínio automaticamente</span>
+              <h3 class="text-xs font-bold uppercase tracking-wider text-[#003366]">➕ Adicionar Nova Espécie ou Colar FASTA Bruto (Para Novas Aulas)</h3>
+              <span class="text-[11px] text-slate-600">Calcula ORF +1, Start/Stop e Domínio automaticamente</span>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
-              <input id="custom-species-name" type="text" placeholder="Espécie (ex: Bos taurus)" class="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white" />
-              <input id="custom-common-name" type="text" placeholder="Nome comum (ex: Bovino)" class="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white" />
-              <input id="custom-accession" type="text" placeholder="Acesso (ex: NM_001192095.1)" class="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white mono" />
+              <input id="custom-species-name" type="text" placeholder="Espécie (ex: Bos taurus)" class="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-900" />
+              <input id="custom-common-name" type="text" placeholder="Nome comum (ex: Bovino)" class="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-900" />
+              <input id="custom-accession" type="text" placeholder="Acesso (ex: NM_001192095.1)" class="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 mono" />
               <div class="flex gap-1">
-                <input id="custom-dom-start" type="number" placeholder="Dom Início (154)" value="154" class="w-1/2 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-white mono" title="Posição inicial do domínio (nt)" />
-                <input id="custom-dom-end" type="number" placeholder="Dom Fim (1086)" value="1086" class="w-1/2 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-white mono" title="Posição final do domínio (nt)" />
+                <input id="custom-dom-start" type="number" placeholder="Dom Início (154)" value="154" class="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-900 mono" title="Posição inicial do domínio (nt)" />
+                <input id="custom-dom-end" type="number" placeholder="Dom Fim (1086)" value="1086" class="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-900 mono" title="Posição final do domínio (nt)" />
               </div>
             </div>
-            <textarea id="custom-fasta-seq" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 mono focus:outline-none focus:border-sky-500" placeholder="Cole aqui a sequência FASTA (>Código Espécie... ATGCGATT...) ou clique em 'Buscar no NCBI por Acesso/Espécie' abaixo..."></textarea>
+            <textarea id="custom-fasta-seq" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-800 mono focus:outline-none focus:border-sky-500" placeholder="Cole aqui a sequência FASTA (>Código Espécie... ATGCGATT...) ou clique em 'Buscar no NCBI por Acesso/Espécie' abaixo..."></textarea>
             <div class="flex flex-wrap items-center justify-between gap-2">
-              <button id="btn-fetch-live-ncbi" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 text-xs font-semibold transition">
+              <button id="btn-fetch-live-ncbi" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-[#003366] border border-slate-300 text-xs font-semibold transition">
                 🌐 Buscar FASTA ao Vivo na API NCBI (E-utilities)
               </button>
-              <button id="btn-add-custom-species" class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition">
+              <button id="btn-add-custom-species" class="px-4 py-1.5 rounded-lg bg-[#006633] hover:bg-[#004d26] text-white text-xs font-bold transition">
                 ✅ Processar ORF + Domínio e Incluir na Tabela
               </button>
             </div>
-            <div id="batch-log-box" class="text-[11px] text-slate-400 mono bg-slate-950/80 px-3 py-1.5 rounded border border-slate-800/80">
+            <div id="batch-log-box" class="text-[11px] text-slate-600 mono bg-slate-50 px-3 py-1.5 rounded border border-slate-200">
               Status: 12 registros de referência (10 espécies animais V1aR + 2 plantas FLC) carregados e validados.
             </div>
           </div>
@@ -238,40 +260,43 @@ Homo sapiens</textarea>
       <div class="glass-card rounded-2xl p-5 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 class="text-base md:text-lg font-bold text-white">📊 Matriz Comparativa Consolidada (FASTA • ORFfinder • CD-Search wrpsb.cgi)</h2>
-            <p class="text-xs text-slate-400">Clique em <strong class="text-sky-300">"🔬 Inspecionar 3 Etapas"</strong> em qualquer linha para abrir a sequência colorida completa, o mapa gráfico de domínios e o formulário direto do <code class="mono">wrpsb.cgi</code>.</p>
+            <h2 class="text-base md:text-lg font-bold text-slate-900">📊 Matriz Comparativa Consolidada (FASTA • ORFfinder • CD-Search wrpsb.cgi)</h2>
+            <p class="text-xs text-slate-600">Clique em <strong class="text-[#003366]">"✨ Gerar Formatação"</strong> em qualquer linha para gerar a sequência colorida por blocos (Start, Domínio, C-terminal, Stop), ver o ORFfinder e submeter ao <code class="mono">wrpsb.cgi</code>.</p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
-            <input id="table-filter-input" type="text" placeholder="Filtrar espécie ou acesso..." class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-sky-500" />
-            <button id="btn-copy-tsv-sheets" class="px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-semibold transition">
+            <input id="table-filter-input" type="text" placeholder="Filtrar espécie ou acesso..." class="bg-slate-100 border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-sky-500" />
+            <button id="btn-copy-tsv-sheets" class="px-3 py-1.5 rounded-lg bg-[#006633]/10 hover:bg-[#006633]/20 text-[#006633] border border-emerald-500/40 text-xs font-semibold transition">
               📋 Copiar Tabela para Google Sheets
             </button>
-            <button id="btn-download-csv" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition">
+            <button id="btn-download-xlsx" class="px-3 py-1.5 rounded-lg bg-[#006633] hover:bg-[#004d26] text-white text-xs font-bold shadow transition">
+              📊 Baixar Excel (.xlsx)
+            </button>
+            <button id="btn-download-csv" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 text-xs font-semibold transition">
               📥 Baixar .CSV
             </button>
-            <button id="btn-download-multifasta" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition">
+            <button id="btn-download-multifasta" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 text-xs font-semibold transition">
               🧬 Baixar Multi-FASTA
             </button>
           </div>
         </div>
 
-        <div class="overflow-x-auto custom-scroll rounded-xl border border-slate-800">
+        <div class="overflow-x-auto custom-scroll rounded-xl border border-slate-200">
           <table class="w-full text-left border-collapse text-xs">
             <thead>
-              <tr class="bg-slate-900/95 text-slate-300 border-b border-slate-800 uppercase text-[11px]">
+              <tr class="bg-slate-100/95 text-slate-700 border-b border-slate-200 uppercase text-[11px]">
                 <th class="py-3 px-3 font-bold">#</th>
                 <th class="py-3 px-3 font-bold">Espécie & Grupo</th>
                 <th class="py-3 px-3 font-bold">Gene</th>
                 <th class="py-3 px-3 font-bold">Acesso NCBI & Links</th>
                 <th class="py-3 px-3 font-bold">Total CDS (ORF1)</th>
-                <th class="py-3 px-3 font-bold text-emerald-400">1. Início (Start + N-term)</th>
-                <th class="py-3 px-3 font-bold text-sky-400">2. Domínio Principal (wrpsb.cgi)</th>
-                <th class="py-3 px-3 font-bold text-purple-400">3. Restante / V1R_C</th>
-                <th class="py-3 px-3 font-bold text-rose-400">4. Final (Stop)</th>
+                <th class="py-3 px-3 font-bold text-[#006633]">1. Início (Start + N-term)</th>
+                <th class="py-3 px-3 font-bold text-[#003366]">2. Domínio Principal (wrpsb.cgi)</th>
+                <th class="py-3 px-3 font-bold text-indigo-800">3. Restante / V1R_C</th>
+                <th class="py-3 px-3 font-bold text-rose-700">4. Final (Stop)</th>
                 <th class="py-3 px-3 font-bold text-center">Ações Rápidas</th>
               </tr>
             </thead>
-            <tbody id="species-table-body" class="divide-y divide-slate-800/70 bg-slate-950/40">
+            <tbody id="species-table-body" class="divide-y divide-slate-200 bg-white">
               <!-- Populated dynamically via JS -->
             </tbody>
           </table>
@@ -283,15 +308,28 @@ Homo sapiens</textarea>
     <!-- TAB 2: INSPETOR 3 FUNÇÕES (FASTA -> ORFFINDER -> CD-SEARCH) -->
     <!-- ========================================================= -->
     <section id="view-pipeline" class="space-y-6 hidden">
+      <!-- Beginner-Friendly 3-Step Guide Strip -->
+      <div class="bg-white border border-slate-200 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div class="flex items-center gap-2 font-bold text-[#003366]">
+          <span>📖 Como a formatação é gerada:</span>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 text-slate-700">
+          <span class="px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200"><strong>1. FASTA</strong> (Sequência do NCBI)</span>
+          <span>&rarr;</span>
+          <span class="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-[#006633]"><strong>2. ORFfinder</strong> (Acha Start ATG e Stop)</span>
+          <span>&rarr;</span>
+          <span class="px-2.5 py-1 rounded-lg bg-sky-50 border border-sky-200 text-[#003366]"><strong>3. CD-Search</strong> (Pinta o Domínio e Gera Blocos)</span>
+        </div>
+      </div>
       <!-- Species Selector Bar & Direct NCBI Form Launchers -->
       <div class="glass-card rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
         <div class="flex items-center gap-3 flex-wrap">
-          <label for="inspector-species-select" class="text-xs font-bold uppercase tracking-wider text-sky-400">Espécie Selecionada:</label>
-          <select id="inspector-species-select" class="bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-sm font-bold text-white focus:outline-none focus:border-sky-500">
+          <label for="inspector-species-select" class="text-xs font-bold uppercase tracking-wider text-[#003366]">Espécie Selecionada:</label>
+          <select id="inspector-species-select" class="bg-slate-100 border border-slate-300 rounded-xl px-3.5 py-2 text-sm font-bold text-slate-900 focus:outline-none focus:border-sky-500">
             <!-- Populated via JS -->
           </select>
-          <span id="inspector-badge-accession" class="px-2.5 py-1 rounded-lg bg-slate-800 text-sky-300 mono text-xs font-semibold border border-slate-700">HM856595.1</span>
-          <span id="inspector-badge-length" class="px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 mono text-xs font-semibold border border-emerald-500/30">1266 bp (421 aa)</span>
+          <span id="inspector-badge-accession" class="px-2.5 py-1 rounded-lg bg-slate-100 text-[#003366] mono text-xs font-semibold border border-slate-300">HM856595.1</span>
+          <span id="inspector-badge-length" class="px-2.5 py-1 rounded-lg bg-emerald-50 text-[#006633] mono text-xs font-semibold border border-emerald-500/30">1266 bp (421 aa)</span>
         </div>
 
         <!-- Hidden Form for Direct 1-Click POST to NCBI CD-Search (wrpsb.cgi) -->
@@ -306,10 +344,10 @@ Homo sapiens</textarea>
         </form>
 
         <div class="flex items-center gap-2 flex-wrap">
-          <a id="btn-inspector-genbank" href="https://www.ncbi.nlm.nih.gov/nuccore/HM856595.1" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition">
+          <a id="btn-inspector-genbank" href="https://www.ncbi.nlm.nih.gov/nuccore/HM856595.1" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 text-xs font-semibold transition">
             1️⃣ Abrir GenBank / FASTA ↗
           </a>
-          <a id="btn-inspector-orffinder" href="https://www.ncbi.nlm.nih.gov/orffinder/" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition">
+          <a id="btn-inspector-orffinder" href="https://www.ncbi.nlm.nih.gov/orffinder/" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 text-xs font-semibold transition">
             2️⃣ Abrir NCBI ORFfinder ↗
           </a>
           <button id="btn-submit-wrpsb" type="button" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-extrabold shadow-lg shadow-amber-500/20 transition flex items-center gap-1.5">
@@ -323,44 +361,44 @@ Homo sapiens</textarea>
         <!-- STEP 1: FASTA & Nucleotide Composition -->
         <div class="lg:col-span-5 glass-card rounded-2xl p-5 flex flex-col justify-between space-y-4">
           <div class="space-y-3">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-2.5">
               <div>
-                <span class="text-[11px] font-bold uppercase tracking-wider text-sky-400">Função 01 • NCBI Nucleotide</span>
-                <h3 class="text-sm font-bold text-white">Sequência FASTA Completa & Composição</h3>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-[#003366]">Função 01 • NCBI Nucleotide</span>
+                <h3 class="text-sm font-bold text-slate-900">Sequência FASTA Completa & Composição</h3>
               </div>
-              <button id="btn-copy-fasta" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-300 text-xs font-semibold border border-slate-700 transition">
+              <button id="btn-copy-fasta" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[#003366] text-xs font-semibold border border-slate-300 transition">
                 📋 Copiar FASTA
               </button>
             </div>
 
-            <div id="inspector-fasta-header" class="text-xs mono text-amber-300 bg-slate-950/90 p-2.5 rounded-lg border border-slate-800">
+            <div id="inspector-fasta-header" class="text-xs mono text-amber-800 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
               &gt;HM856595.1 Ovis aries arginine vasopressin receptor 1A (AVPR1A) mRNA, complete cds
             </div>
 
-            <textarea id="inspector-fasta-body" rows="8" readonly class="w-full bg-slate-950/90 border border-slate-800 rounded-lg p-3 text-xs text-slate-300 mono custom-scroll focus:outline-none"></textarea>
+            <textarea id="inspector-fasta-body" rows="8" readonly class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-700 mono custom-scroll focus:outline-none"></textarea>
           </div>
 
-          <div class="space-y-2 pt-2 border-t border-slate-800">
-            <div class="text-xs font-semibold text-slate-400 flex justify-between">
+          <div class="space-y-2 pt-2 border-t border-slate-200">
+            <div class="text-xs font-semibold text-slate-600 flex justify-between">
               <span>Composição de Bases (5' ➔ 3')</span>
-              <span id="inspector-gc-percent" class="text-sky-400 font-bold mono">GC: 64.5%</span>
+              <span id="inspector-gc-percent" class="text-[#003366] font-bold mono">GC: 64.5%</span>
             </div>
             <div class="grid grid-cols-4 gap-2 text-center text-xs mono">
-              <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
-                <div class="text-slate-400 text-[10px]">Adenina (A)</div>
-                <div id="base-count-a" class="font-bold text-emerald-400">215</div>
+              <div class="bg-slate-100 p-2 rounded-lg border border-slate-200">
+                <div class="text-slate-600 text-[10px]">Adenina (A)</div>
+                <div id="base-count-a" class="font-bold text-[#006633]">215</div>
               </div>
-              <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
-                <div class="text-slate-400 text-[10px]">Timina (T)</div>
-                <div id="base-count-t" class="font-bold text-rose-400">234</div>
+              <div class="bg-slate-100 p-2 rounded-lg border border-slate-200">
+                <div class="text-slate-600 text-[10px]">Timina (T)</div>
+                <div id="base-count-t" class="font-bold text-rose-700">234</div>
               </div>
-              <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
-                <div class="text-slate-400 text-[10px]">Citosina (C)</div>
-                <div id="base-count-c" class="font-bold text-sky-400">432</div>
+              <div class="bg-slate-100 p-2 rounded-lg border border-slate-200">
+                <div class="text-slate-600 text-[10px]">Citosina (C)</div>
+                <div id="base-count-c" class="font-bold text-[#003366]">432</div>
               </div>
-              <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
-                <div class="text-slate-400 text-[10px]">Guanina (G)</div>
-                <div id="base-count-g" class="font-bold text-amber-400">385</div>
+              <div class="bg-slate-100 p-2 rounded-lg border border-slate-200">
+                <div class="text-slate-600 text-[10px]">Guanina (G)</div>
+                <div id="base-count-g" class="font-bold text-amber-700">385</div>
               </div>
             </div>
           </div>
@@ -368,16 +406,16 @@ Homo sapiens</textarea>
 
         <!-- STEP 2: ORFFINDER 6-FRAME ENGINE -->
         <div class="lg:col-span-7 glass-card rounded-2xl p-5 space-y-4">
-          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2.5">
             <div>
-              <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-400">Função 02 • Motor NCBI /orffinder/ Integrado</span>
-              <h3 class="text-sm font-bold text-white">Varredura Automática nas 6 Fases de Leitura (Frames +1 a -3)</h3>
+              <span class="text-[11px] font-bold uppercase tracking-wider text-[#006633]">Função 02 • Motor NCBI /orffinder/ Integrado</span>
+              <h3 class="text-sm font-bold text-slate-900">Varredura Automática nas 6 Fases de Leitura (Frames +1 a -3)</h3>
             </div>
             <div class="flex items-center gap-2">
-              <button id="btn-copy-orf1-nt" class="px-2.5 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-semibold transition">
+              <button id="btn-copy-orf1-nt" class="px-2.5 py-1 rounded-lg bg-[#006633]/10 hover:bg-[#006633]/20 text-[#006633] border border-emerald-500/40 text-xs font-semibold transition">
                 📋 Copiar Maior ORF (nt)
               </button>
-              <button id="btn-copy-orf1-aa" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition">
+              <button id="btn-copy-orf1-aa" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 text-xs font-semibold transition">
                 🧪 Copiar Proteína (aa)
               </button>
             </div>
@@ -385,10 +423,10 @@ Homo sapiens</textarea>
 
           <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
             <!-- ORF Table (Replica of NCBI ORFfinder table from user photo) -->
-            <div class="md:col-span-7 overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/70">
+            <div class="md:col-span-7 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50">
               <table class="w-full text-left border-collapse text-xs mono">
                 <thead>
-                  <tr class="bg-slate-900 text-slate-300 border-b border-slate-800 text-[11px]">
+                  <tr class="bg-slate-100 text-slate-700 border-b border-slate-200 text-[11px]">
                     <th class="py-2 px-2.5">Label</th>
                     <th class="py-2 px-2">Strand</th>
                     <th class="py-2 px-2">Frame</th>
@@ -397,23 +435,23 @@ Homo sapiens</textarea>
                     <th class="py-2 px-2.5">Length (nt | aa)</th>
                   </tr>
                 </thead>
-                <tbody id="orffinder-table-body" class="divide-y divide-slate-800/60">
+                <tbody id="orffinder-table-body" class="divide-y divide-slate-200">
                   <!-- Populated dynamically by 6-frame ORF engine -->
                 </tbody>
               </table>
             </div>
 
             <!-- Translated Protein Preview -->
-            <div class="md:col-span-5 flex flex-col justify-between bg-slate-950/80 border border-slate-800 rounded-xl p-3 space-y-2">
+            <div class="md:col-span-5 flex flex-col justify-between bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
               <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-emerald-400">ORF1 Selecionada (Maior CDS)</span>
-                <span id="orf1-summary-tag" class="text-[11px] mono text-slate-400">+1 | 1..1266</span>
+                <span class="text-xs font-bold text-[#006633]">ORF1 Selecionada (Maior CDS)</span>
+                <span id="orf1-summary-tag" class="text-[11px] mono text-slate-600">+1 | 1..1266</span>
               </div>
-              <div class="text-[11px] text-slate-400">Tradução Conceitual (Aminoácidos 1-Letra):</div>
-              <textarea id="orf1-protein-seq" rows="6" readonly class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-[11px] text-emerald-300 mono custom-scroll focus:outline-none"></textarea>
-              <div class="text-[11px] text-slate-400 flex items-center justify-between pt-1">
-                <span>Início: <strong id="orf1-start-codon" class="text-emerald-400 mono">ATG (Met)</strong></span>
-                <span>Parada: <strong id="orf1-stop-codon" class="text-rose-400 mono">TGA (*)</strong></span>
+              <div class="text-[11px] text-slate-600">Tradução Conceitual (Aminoácidos 1-Letra):</div>
+              <textarea id="orf1-protein-seq" rows="6" readonly class="w-full bg-slate-100 border border-slate-200 rounded-lg p-2 text-[11px] text-[#006633] mono custom-scroll focus:outline-none"></textarea>
+              <div class="text-[11px] text-slate-600 flex items-center justify-between pt-1">
+                <span>Início: <strong id="orf1-start-codon" class="text-[#006633] mono">ATG (Met)</strong></span>
+                <span>Parada: <strong id="orf1-stop-codon" class="text-rose-700 mono">TGA (*)</strong></span>
               </div>
             </div>
           </div>
@@ -422,33 +460,33 @@ Homo sapiens</textarea>
 
       <!-- STEP 3: CONSERVED DOMAIN GRAPHICAL MAP (wrpsb.cgi) & COLORED SEQUENCE PARTITION -->
       <div class="glass-card rounded-2xl p-5 space-y-5">
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
           <div>
-            <span class="text-[11px] font-bold uppercase tracking-wider text-amber-400">Função 03 • NCBI Conserved Domain Search (wrpsb.cgi / CDD - 71136 PSSMs)</span>
-            <h3 class="text-base font-bold text-white">Mapeamento Gráfico de Domínios Conservados & Partição Colorida do Gene</h3>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-amber-700">Função 03 • NCBI Conserved Domain Search (wrpsb.cgi / CDD - 71136 PSSMs)</span>
+            <h3 class="text-base font-bold text-slate-900">Mapeamento Gráfico de Domínios Conservados & Partição Colorida do Gene</h3>
           </div>
           <!-- Dynamic Domain Coordinate Adjuster -->
-          <div class="flex items-center gap-2 flex-wrap bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-800">
-            <span class="text-xs text-slate-300 font-semibold">Ajustar Intervalo Domínio (nt):</span>
-            <label class="text-xs text-slate-400">Início:</label>
-            <input id="input-domain-start" type="number" value="154" class="w-20 bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-sky-300 font-bold mono" />
-            <label class="text-xs text-slate-400">Fim:</label>
-            <input id="input-domain-end" type="number" value="1086" class="w-20 bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-sky-300 font-bold mono" />
-            <button id="btn-apply-domain-coords" class="px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition">
+          <div class="flex items-center gap-2 flex-wrap bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+            <span class="text-xs text-slate-700 font-semibold">Ajustar Intervalo Domínio (nt):</span>
+            <label class="text-xs text-slate-600">Início:</label>
+            <input id="input-domain-start" type="number" value="154" class="w-20 bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs text-[#003366] font-bold mono" />
+            <label class="text-xs text-slate-600">Fim:</label>
+            <input id="input-domain-end" type="number" value="1086" class="w-20 bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs text-[#003366] font-bold mono" />
+            <button id="btn-apply-domain-coords" class="px-2.5 py-1 rounded bg-[#003366] hover:bg-[#002244] text-white text-xs font-bold transition">
               Recalcular Mapa
             </button>
           </div>
         </div>
 
         <!-- Graphical CD-Search Architecture Diagram (Replica of NCBI wrpsb.cgi output) -->
-        <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-3">
-          <div class="flex items-center justify-between text-xs text-slate-400 mono">
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between text-xs text-slate-600 mono">
             <span>Query [RF +1] Régua de Nucleotídeos (1 bp ➔ <span id="ruler-max-bp">1266</span> bp)</span>
             <span>Banco: CDD - 71136 PSSMs | E-value cutoff: 0.01</span>
           </div>
 
           <!-- Visual Bar Track -->
-          <div class="relative w-full h-24 bg-slate-900 rounded-lg border border-slate-800 p-3 flex flex-col justify-between overflow-hidden">
+          <div class="relative w-full h-24 bg-slate-100 rounded-lg border border-slate-200 p-3 flex flex-col justify-between overflow-hidden">
             <!-- Full Query Gray Bar -->
             <div class="w-full h-2.5 bg-slate-700 rounded-full relative flex items-center">
               <div class="w-2 h-4 bg-emerald-400 rounded-sm absolute left-0" title="Start Codon (ATG)"></div>
@@ -460,17 +498,17 @@ Homo sapiens</textarea>
               <div id="visual-domain-main" class="absolute top-0 h-8 rounded-full bg-gradient-to-r from-teal-500 via-cyan-500 to-sky-500 border border-cyan-300 shadow-lg flex items-center justify-center text-xs font-extrabold text-slate-950 px-2 truncate transition-all duration-300" style="left: 12%; width: 73%;">
                 7tmA_V1aR (154..1086)
               </div>
-              <div id="visual-domain-cterm" class="absolute top-0 h-8 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 border border-purple-300 shadow flex items-center justify-center text-[11px] font-bold text-white px-2 truncate transition-all duration-300" style="left: 88%; width: 11%;">
+              <div id="visual-domain-cterm" class="absolute top-0 h-8 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 border border-purple-300 shadow flex items-center justify-center text-[11px] font-bold text-slate-900 px-2 truncate transition-all duration-300" style="left: 88%; width: 11%;">
                 V1R_C
               </div>
             </div>
 
             <!-- Scale Marks -->
-            <div class="flex justify-between text-[10px] text-slate-400 mono">
+            <div class="flex justify-between text-[10px] text-slate-600 mono">
               <span>1 (ATG)</span>
-              <span id="scale-mark-dom-start" class="text-sky-400 font-bold">154 (Início Domínio)</span>
-              <span id="scale-mark-dom-end" class="text-sky-400 font-bold">1086 (Fim Domínio)</span>
-              <span id="scale-mark-stop" class="text-rose-400 font-bold">1266 (Stop)</span>
+              <span id="scale-mark-dom-start" class="text-[#003366] font-bold">154 (Início Domínio)</span>
+              <span id="scale-mark-dom-end" class="text-[#003366] font-bold">1086 (Fim Domínio)</span>
+              <span id="scale-mark-stop" class="text-rose-700 font-bold">1266 (Stop)</span>
             </div>
           </div>
 
@@ -478,7 +516,7 @@ Homo sapiens</textarea>
           <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse text-xs">
               <thead>
-                <tr class="text-slate-400 border-b border-slate-800 text-[11px] uppercase">
+                <tr class="text-slate-600 border-b border-slate-200 text-[11px] uppercase">
                   <th class="py-2 px-3">Name</th>
                   <th class="py-2 px-3">Accession</th>
                   <th class="py-2 px-3">Description (Conserved Domain Database)</th>
@@ -487,7 +525,7 @@ Homo sapiens</textarea>
                   <th class="py-2 px-3 mono">E-value</th>
                 </tr>
               </thead>
-              <tbody id="cdd-hits-tbody" class="divide-y divide-slate-800/60">
+              <tbody id="cdd-hits-tbody" class="divide-y divide-slate-200">
                 <!-- Populated dynamically -->
               </tbody>
             </table>
@@ -497,58 +535,58 @@ Homo sapiens</textarea>
         <!-- 4-Block Color-Coded Sequence Partition -->
         <div class="space-y-4">
           <div class="flex flex-wrap items-center justify-between gap-2">
-            <h4 class="text-sm font-bold text-white flex items-center gap-2">
+            <h4 class="text-sm font-bold text-slate-900 flex items-center gap-2">
               <span>🎨</span> Cadeia Completa de Nucleotídeos Pintada por Etapas (Pronta para Relatório)
             </h4>
             <div class="flex flex-wrap items-center gap-2 text-xs">
-              <span class="px-2.5 py-1 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold mono">1A. Start Codon (ATG)</span>
-              <span class="px-2.5 py-1 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold mono">1B. Região N-Terminal</span>
-              <span class="px-2.5 py-1 rounded-md bg-sky-500/25 text-sky-200 border border-sky-400/50 font-bold mono">2. Domínio Principal (CD-Search)</span>
-              <span class="px-2.5 py-1 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/40 font-bold mono">3. C-Terminal / V1R_C</span>
-              <span class="px-2.5 py-1 rounded-md bg-rose-500/25 text-rose-300 border border-rose-500/40 font-bold mono">4. Stop Codon</span>
+              <span class="px-2.5 py-1 rounded-md bg-[#006633]/10 text-[#006633] border border-[#006633]/30 font-bold mono">1A. Start Codon (ATG)</span>
+              <span class="px-2.5 py-1 rounded-md bg-amber-500/20 text-amber-800 border border-amber-500/40 font-bold mono">1B. Região N-Terminal</span>
+              <span class="px-2.5 py-1 rounded-md bg-sky-100 text-[#003366] border border-sky-400/50 font-bold mono">2. Domínio Principal (CD-Search)</span>
+              <span class="px-2.5 py-1 rounded-md bg-indigo-100 text-indigo-700 border border-purple-500/40 font-bold mono">3. C-Terminal / V1R_C</span>
+              <span class="px-2.5 py-1 rounded-md bg-rose-100 text-rose-700 border border-rose-500/40 font-bold mono">4. Stop Codon</span>
             </div>
           </div>
 
-          <div id="colored-sequence-viewer" class="bg-slate-950 border border-slate-800 rounded-xl p-4 mono text-xs md:text-sm seq-box select-all">
+          <div id="colored-sequence-viewer" class="bg-slate-50 border border-slate-200 rounded-xl p-4 mono text-xs md:text-sm seq-box select-all">
             <!-- Rendered with color spans -->
           </div>
 
           <!-- Individual Copy Cards for the 4 Operational Blocks -->
           <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <div class="bg-slate-900/90 border border-emerald-500/30 rounded-xl p-3 space-y-2">
+            <div class="bg-slate-50 border border-emerald-500/30 rounded-xl p-3 space-y-2">
               <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-emerald-400">1. Início (Start + N-term)</span>
-                <button data-copy-block="start_nterm" class="btn-copy-block text-[11px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 font-semibold">Copiar</button>
+                <span class="text-xs font-bold text-[#006633]">1. Início (Start + N-term)</span>
+                <button data-copy-block="start_nterm" class="btn-copy-block text-[11px] px-2 py-0.5 rounded bg-emerald-100 text-[#006633] hover:bg-emerald-100 font-semibold">Copiar</button>
               </div>
-              <div id="block-meta-1" class="text-[11px] text-slate-400 mono">Pos 1..153 (153 bp)</div>
-              <div id="block-seq-1" class="text-[11px] mono text-slate-300 bg-slate-950 p-2 rounded border border-slate-800 h-20 overflow-y-auto seq-box"></div>
+              <div id="block-meta-1" class="text-[11px] text-slate-600 mono">Pos 1..153 (153 bp)</div>
+              <div id="block-seq-1" class="text-[11px] mono text-slate-700 bg-slate-50 p-2 rounded border border-slate-200 h-20 overflow-y-auto seq-box"></div>
             </div>
 
-            <div class="bg-slate-900/90 border border-sky-500/40 rounded-xl p-3 space-y-2">
+            <div class="bg-slate-50 border border-sky-500/40 rounded-xl p-3 space-y-2">
               <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-sky-400">2. Domínio Principal</span>
-                <button data-copy-block="domain" class="btn-copy-block text-[11px] px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 hover:bg-sky-500/30 font-semibold">Copiar</button>
+                <span class="text-xs font-bold text-[#003366]">2. Domínio Principal</span>
+                <button data-copy-block="domain" class="btn-copy-block text-[11px] px-2 py-0.5 rounded bg-sky-500/20 text-[#003366] hover:bg-sky-500/30 font-semibold">Copiar</button>
               </div>
-              <div id="block-meta-2" class="text-[11px] text-slate-400 mono">Pos 154..1086 (933 bp)</div>
-              <div id="block-seq-2" class="text-[11px] mono text-sky-200 bg-slate-950 p-2 rounded border border-slate-800 h-20 overflow-y-auto seq-box"></div>
+              <div id="block-meta-2" class="text-[11px] text-slate-600 mono">Pos 154..1086 (933 bp)</div>
+              <div id="block-seq-2" class="text-[11px] mono text-[#003366] bg-slate-50 p-2 rounded border border-slate-200 h-20 overflow-y-auto seq-box"></div>
             </div>
 
-            <div class="bg-slate-900/90 border border-purple-500/30 rounded-xl p-3 space-y-2">
+            <div class="bg-slate-50 border border-purple-500/30 rounded-xl p-3 space-y-2">
               <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-purple-400">3. Restante / V1R_C</span>
-                <button data-copy-block="cterm" class="btn-copy-block text-[11px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 font-semibold">Copiar</button>
+                <span class="text-xs font-bold text-indigo-800">3. Restante / V1R_C</span>
+                <button data-copy-block="cterm" class="btn-copy-block text-[11px] px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 hover:bg-purple-500/30 font-semibold">Copiar</button>
               </div>
-              <div id="block-meta-3" class="text-[11px] text-slate-400 mono">Pos 1087..1263 (177 bp)</div>
-              <div id="block-seq-3" class="text-[11px] mono text-purple-200 bg-slate-950 p-2 rounded border border-slate-800 h-20 overflow-y-auto seq-box"></div>
+              <div id="block-meta-3" class="text-[11px] text-slate-600 mono">Pos 1087..1263 (177 bp)</div>
+              <div id="block-seq-3" class="text-[11px] mono text-indigo-800 bg-slate-50 p-2 rounded border border-slate-200 h-20 overflow-y-auto seq-box"></div>
             </div>
 
-            <div class="bg-slate-900/90 border border-rose-500/30 rounded-xl p-3 space-y-2">
+            <div class="bg-slate-50 border border-rose-500/30 rounded-xl p-3 space-y-2">
               <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-rose-400">4. Final (Stop Codon)</span>
-                <button data-copy-block="stop" class="btn-copy-block text-[11px] px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 font-semibold">Copiar</button>
+                <span class="text-xs font-bold text-rose-700">4. Final (Stop Codon)</span>
+                <button data-copy-block="stop" class="btn-copy-block text-[11px] px-2 py-0.5 rounded bg-rose-100 text-rose-700 hover:bg-rose-500/30 font-semibold">Copiar</button>
               </div>
-              <div id="block-meta-4" class="text-[11px] text-slate-400 mono">Pos 1264..1266 (3 bp)</div>
-              <div id="block-seq-4" class="text-base font-extrabold mono text-rose-400 bg-slate-950 p-2 rounded border border-slate-800 h-20 flex items-center justify-center">TGA</div>
+              <div id="block-meta-4" class="text-[11px] text-slate-600 mono">Pos 1264..1266 (3 bp)</div>
+              <div id="block-seq-4" class="text-base font-extrabold mono text-rose-700 bg-slate-50 p-2 rounded border border-slate-200 h-20 flex items-center justify-center">TGA</div>
             </div>
           </div>
         </div>
@@ -560,99 +598,99 @@ Homo sapiens</textarea>
     <!-- ========================================================= -->
     <section id="view-pcr" class="space-y-6 hidden">
       <div class="glass-card rounded-2xl p-5 space-y-5">
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
           <div>
-            <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-400">Próximas Aulas • Automação de Desenho de Primers & Validação Termodinâmica</span>
-            <h2 class="text-base md:text-lg font-bold text-white">🧪 Laboratório de Primers PCR (Forward 5'➔3' & Reverse Complement 5'➔3')</h2>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-[#006633]">Próximas Aulas • Automação de Desenho de Primers & Validação Termodinâmica</span>
+            <h2 class="text-base md:text-lg font-bold text-slate-900">🧪 Laboratório de Primers PCR (Forward 5'➔3' & Reverse Complement 5'➔3')</h2>
           </div>
-          <a href="https://www.ncbi.nlm.nih.gov/tools/primer-blast/index.cgi" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow transition flex items-center gap-1.5">
+          <a href="https://www.ncbi.nlm.nih.gov/tools/primer-blast/index.cgi" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 rounded-xl bg-[#006633] hover:bg-[#004d26] text-white text-xs font-bold shadow transition flex items-center gap-1.5">
             <span>🧬</span> Validar no NCBI Primer-BLAST ↗
           </a>
         </div>
 
         <!-- Primer Parameters Control Bar -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-900/90 p-4 rounded-xl border border-slate-800">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
           <div>
-            <label for="pcr-species-select" class="block text-xs font-semibold text-slate-300 mb-1">Espécie Alvo:</label>
-            <select id="pcr-species-select" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-semibold">
+            <label for="pcr-species-select" class="block text-xs font-semibold text-slate-700 mb-1">Espécie Alvo:</label>
+            <select id="pcr-species-select" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 font-semibold">
               <!-- Populated via JS -->
             </select>
           </div>
           <div>
-            <label for="pcr-target-region" class="block text-xs font-semibold text-slate-300 mb-1">Região para Amplificar (Amplicon):</label>
-            <select id="pcr-target-region" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-sky-300 font-semibold">
+            <label for="pcr-target-region" class="block text-xs font-semibold text-slate-700 mb-1">Região para Amplificar (Amplicon):</label>
+            <select id="pcr-target-region" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-[#003366] font-semibold">
               <option value="domain">Domínio Conservado Principal (7tmA_V1aR / MADS)</option>
               <option value="cds">CDS Completa (Do Start ATG ao Stop Codon)</option>
             </select>
           </div>
           <div>
-            <label for="pcr-primer-len" class="block text-xs font-semibold text-slate-300 mb-1">Comprimento do Primer: <span id="pcr-len-val" class="text-emerald-400 font-bold mono">20 nt</span></label>
+            <label for="pcr-primer-len" class="block text-xs font-semibold text-slate-700 mb-1">Comprimento do Primer: <span id="pcr-len-val" class="text-[#006633] font-bold mono">20 nt</span></label>
             <input id="pcr-primer-len" type="range" min="18" max="25" value="20" class="w-full accent-emerald-500 cursor-pointer mt-1.5" />
           </div>
-          <div class="flex flex-col justify-center bg-slate-950 px-3 py-2 rounded-lg border border-slate-800">
-            <span class="text-[11px] text-slate-400">Tamanho do Produto PCR (Amplicon):</span>
-            <span id="pcr-amplicon-size" class="text-lg font-extrabold text-sky-400 mono">933 bp</span>
+          <div class="flex flex-col justify-center bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
+            <span class="text-[11px] text-slate-600">Tamanho do Produto PCR (Amplicon):</span>
+            <span id="pcr-amplicon-size" class="text-lg font-extrabold text-[#003366] mono">933 bp</span>
           </div>
         </div>
 
         <!-- Forward & Reverse Primer Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <!-- Forward Primer -->
-          <div class="bg-slate-950/90 border border-emerald-500/40 rounded-xl p-4 space-y-3">
+          <div class="bg-slate-50 border border-emerald-500/40 rounded-xl p-4 space-y-3">
             <div class="flex items-center justify-between">
               <div>
-                <span class="text-[11px] font-bold uppercase text-emerald-400">Primer Forward (Fita Sense 5' ➔ 3')</span>
-                <h4 id="pcr-fwd-coords" class="text-xs text-slate-400 mono">Posição: 154 .. 173</h4>
+                <span class="text-[11px] font-bold uppercase text-[#006633]">Primer Forward (Fita Sense 5' ➔ 3')</span>
+                <h4 id="pcr-fwd-coords" class="text-xs text-slate-600 mono">Posição: 154 .. 173</h4>
               </div>
-              <button id="btn-copy-fwd" class="px-2.5 py-1 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-xs font-semibold">
+              <button id="btn-copy-fwd" class="px-2.5 py-1 rounded bg-emerald-100 hover:bg-emerald-100 text-[#006633] text-xs font-semibold">
                 📋 Copiar Forward
               </button>
             </div>
-            <div id="pcr-fwd-seq" class="p-3 rounded-lg bg-slate-900 border border-slate-800 text-sm font-bold text-emerald-300 mono tracking-wider text-center">
+            <div id="pcr-fwd-seq" class="p-3 rounded-lg bg-slate-100 border border-slate-200 text-sm font-bold text-[#006633] mono tracking-wider text-center">
               AAGCTGGAGATTGCCGTGCT
             </div>
             <div class="grid grid-cols-3 gap-2 text-center text-xs mono">
-              <div class="bg-slate-900 p-2 rounded border border-slate-800">
-                <div class="text-[10px] text-slate-400">% GC</div>
-                <div id="pcr-fwd-gc" class="font-bold text-white">55.0%</div>
+              <div class="bg-slate-100 p-2 rounded border border-slate-200">
+                <div class="text-[10px] text-slate-600">% GC</div>
+                <div id="pcr-fwd-gc" class="font-bold text-slate-900">55.0%</div>
               </div>
-              <div class="bg-slate-900 p-2 rounded border border-slate-800">
-                <div class="text-[10px] text-slate-400">Tm (Wallace)</div>
-                <div id="pcr-fwd-tm" class="font-bold text-sky-400">62.0 °C</div>
+              <div class="bg-slate-100 p-2 rounded border border-slate-200">
+                <div class="text-[10px] text-slate-600">Tm (Wallace)</div>
+                <div id="pcr-fwd-tm" class="font-bold text-[#003366]">62.0 °C</div>
               </div>
-              <div class="bg-slate-900 p-2 rounded border border-slate-800">
-                <div class="text-[10px] text-slate-400">3' GC Clamp</div>
-                <div id="pcr-fwd-clamp" class="font-bold text-emerald-400">Forte (T/G)</div>
+              <div class="bg-slate-100 p-2 rounded border border-slate-200">
+                <div class="text-[10px] text-slate-600">3' GC Clamp</div>
+                <div id="pcr-fwd-clamp" class="font-bold text-[#006633]">Forte (T/G)</div>
               </div>
             </div>
           </div>
 
           <!-- Reverse Primer -->
-          <div class="bg-slate-950/90 border border-sky-500/40 rounded-xl p-4 space-y-3">
+          <div class="bg-slate-50 border border-sky-500/40 rounded-xl p-4 space-y-3">
             <div class="flex items-center justify-between">
               <div>
-                <span class="text-[11px] font-bold uppercase text-sky-400">Primer Reverse Complement (Antisense 5' ➔ 3')</span>
-                <h4 id="pcr-rev-coords" class="text-xs text-slate-400 mono">Posição: 1067 .. 1086 (Invertido & Complementado)</h4>
+                <span class="text-[11px] font-bold uppercase text-[#003366]">Primer Reverse Complement (Antisense 5' ➔ 3')</span>
+                <h4 id="pcr-rev-coords" class="text-xs text-slate-600 mono">Posição: 1067 .. 1086 (Invertido & Complementado)</h4>
               </div>
-              <button id="btn-copy-rev" class="px-2.5 py-1 rounded bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 text-xs font-semibold">
+              <button id="btn-copy-rev" class="px-2.5 py-1 rounded bg-sky-500/20 hover:bg-sky-500/30 text-[#003366] text-xs font-semibold">
                 📋 Copiar Reverse
               </button>
             </div>
-            <div id="pcr-rev-seq" class="p-3 rounded-lg bg-slate-900 border border-slate-800 text-sm font-bold text-sky-300 mono tracking-wider text-center">
+            <div id="pcr-rev-seq" class="p-3 rounded-lg bg-slate-100 border border-slate-200 text-sm font-bold text-[#003366] mono tracking-wider text-center">
               ACAGTCTTGCAAGAGATGGC
             </div>
             <div class="grid grid-cols-3 gap-2 text-center text-xs mono">
-              <div class="bg-slate-900 p-2 rounded border border-slate-800">
-                <div class="text-[10px] text-slate-400">% GC</div>
-                <div id="pcr-rev-gc" class="font-bold text-white">50.0%</div>
+              <div class="bg-slate-100 p-2 rounded border border-slate-200">
+                <div class="text-[10px] text-slate-600">% GC</div>
+                <div id="pcr-rev-gc" class="font-bold text-slate-900">50.0%</div>
               </div>
-              <div class="bg-slate-900 p-2 rounded border border-slate-800">
-                <div class="text-[10px] text-slate-400">Tm (Wallace)</div>
-                <div id="pcr-rev-tm" class="font-bold text-sky-400">60.0 °C</div>
+              <div class="bg-slate-100 p-2 rounded border border-slate-200">
+                <div class="text-[10px] text-slate-600">Tm (Wallace)</div>
+                <div id="pcr-rev-tm" class="font-bold text-[#003366]">60.0 °C</div>
               </div>
-              <div class="bg-slate-900 p-2 rounded border border-slate-800">
-                <div class="text-[10px] text-slate-400">ΔTm & Pareamento</div>
-                <div id="pcr-delta-tm" class="font-bold text-emerald-400">Δ 2.0°C (Ideal)</div>
+              <div class="bg-slate-100 p-2 rounded border border-slate-200">
+                <div class="text-[10px] text-slate-600">ΔTm & Pareamento</div>
+                <div id="pcr-delta-tm" class="font-bold text-[#006633]">Δ 2.0°C (Ideal)</div>
               </div>
             </div>
           </div>
@@ -660,22 +698,22 @@ Homo sapiens</textarea>
 
         <!-- Batch Primer Table for All Loaded Species -->
         <div class="space-y-3 pt-2">
-          <h3 class="text-sm font-bold text-white">📋 Tabela de Primers Calculados em Lote para Todas as Espécies Carregadas</h3>
-          <div class="overflow-x-auto custom-scroll rounded-xl border border-slate-800">
+          <h3 class="text-sm font-bold text-slate-900">📋 Tabela de Primers Calculados em Lote para Todas as Espécies Carregadas</h3>
+          <div class="overflow-x-auto custom-scroll rounded-xl border border-slate-200">
             <table class="w-full text-left border-collapse text-xs mono">
               <thead>
-                <tr class="bg-slate-900 text-slate-300 border-b border-slate-800 text-[11px] uppercase">
+                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200 text-[11px] uppercase">
                   <th class="py-2.5 px-3">Espécie</th>
                   <th class="py-2.5 px-3">Acesso</th>
                   <th class="py-2.5 px-3">Amplicon</th>
-                  <th class="py-2.5 px-3 text-emerald-400">Primer Forward (5'➔3')</th>
+                  <th class="py-2.5 px-3 text-[#006633]">Primer Forward (5'➔3')</th>
                   <th class="py-2.5 px-3">%GC / Tm (F)</th>
-                  <th class="py-2.5 px-3 text-sky-400">Primer Reverse Complement (5'➔3')</th>
+                  <th class="py-2.5 px-3 text-[#003366]">Primer Reverse Complement (5'➔3')</th>
                   <th class="py-2.5 px-3">%GC / Tm (R)</th>
                   <th class="py-2.5 px-3">ΔTm & Status</th>
                 </tr>
               </thead>
-              <tbody id="pcr-batch-tbody" class="divide-y divide-slate-800/60 bg-slate-950/50">
+              <tbody id="pcr-batch-tbody" class="divide-y divide-slate-200 bg-white">
                 <!-- Populated via JS -->
               </tbody>
             </table>
@@ -691,60 +729,97 @@ Homo sapiens</textarea>
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Google Sheets Automation Formulas Card -->
         <div class="glass-card rounded-2xl p-5 space-y-4">
-          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div class="flex items-center justify-between border-b border-slate-200 pb-3">
             <div>
-              <span class="text-[11px] font-bold uppercase text-emerald-400">Integração Direta no Google Drive</span>
-              <h3 class="text-base font-bold text-white">📊 Planilha Oficial & Fórmulas Automáticas</h3>
+              <span class="text-[11px] font-bold uppercase text-[#006633]">Integração Direta no Google Drive</span>
+              <h3 class="text-base font-bold text-slate-900">📊 Planilha Oficial & Fórmulas Automáticas</h3>
             </div>
-            <a href="https://docs.google.com/spreadsheets/d/16ZS5rJ9Y872LZh3MVUm8AtFv1RcPEriln3HbSaUTnOE/edit" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition">
+            <a href="https://docs.google.com/spreadsheets/d/16ZS5rJ9Y872LZh3MVUm8AtFv1RcPEriln3HbSaUTnOE/edit" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-[#006633] hover:bg-[#004d26] text-white text-xs font-bold transition">
               Abrir Google Sheets ↗
             </a>
           </div>
-          <p class="text-xs text-slate-300 leading-relaxed">
-            Sua planilha <strong class="text-white">NCBI BioInfo Automator (PPGAD/UFT)</strong> já está criada e salva na sua pasta <code class="mono text-sky-300">BIOINFORMÁTICA</code> do Google Drive com 3 abas completas. Caso queira replicar as fórmulas em qualquer outra aba ou planilha dos colegas, copie os blocos abaixo:
+          <p class="text-xs text-slate-700 leading-relaxed">
+            Sua planilha <strong class="text-slate-900">NCBI BioInfo Automator (PPGAD/UFT)</strong> já está criada e salva na sua pasta <code class="mono text-[#003366]">BIOINFORMÁTICA</code> do Google Drive com 3 abas completas. Caso queira replicar as fórmulas em qualquer outra aba ou planilha dos colegas, copie os blocos abaixo:
           </p>
 
           <div class="space-y-2.5 text-xs">
-            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1">
-              <div class="font-bold text-sky-400">1. Gerar Link de Busca NCBI e Download FASTA Direto (Sem Mouse):</div>
-              <code class="block mono text-[11px] text-slate-300 select-all">=HYPERLINK("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&amp;id=" &amp; E10 &amp; "&amp;rettype=fasta&amp;retmode=text"; "📥 Baixar FASTA")</code>
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1">
+              <div class="font-bold text-[#003366]">1. Gerar Link de Busca NCBI e Download FASTA Direto (Sem Mouse):</div>
+              <code class="block mono text-[11px] text-slate-700 select-all">=HYPERLINK("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&amp;id=" &amp; E10 &amp; "&amp;rettype=fasta&amp;retmode=text"; "📥 Baixar FASTA")</code>
             </div>
-            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1">
-              <div class="font-bold text-emerald-400">2. Extrair Start Codon, Domínio Principal (ex: 154..1086) e Stop Codon:</div>
-              <code class="block mono text-[11px] text-slate-300 select-all">Start: =LEFT(I10; 3)  |  Domínio: =MID(I10; M10; N10-M10+1)  |  Stop: =RIGHT(I10; 3)</code>
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1">
+              <div class="font-bold text-[#006633]">2. Extrair Start Codon, Domínio Principal (ex: 154..1086) e Stop Codon:</div>
+              <code class="block mono text-[11px] text-slate-700 select-all">Start: =LEFT(I10; 3)  |  Domínio: =MID(I10; M10; N10-M10+1)  |  Stop: =RIGHT(I10; 3)</code>
             </div>
-            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1">
-              <div class="font-bold text-purple-400">3. Gerar Primer Reverse Complementar 5'➔3' via Fórmula Nativa no Sheets:</div>
-              <code class="block mono text-[11px] text-slate-300 select-all">=JOIN(""; INDEX(MID(UPPER(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(RIGHT(R10;20);"A";"t");"T";"a");"C";"g");"G";"c")); SEQUENCE(20; 1; 20; -1); 1)))</code>
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1">
+              <div class="font-bold text-indigo-800">3. Gerar Primer Reverse Complementar 5'➔3' via Fórmula Nativa no Sheets:</div>
+              <code class="block mono text-[11px] text-slate-700 select-all">=JOIN(""; INDEX(MID(UPPER(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(RIGHT(R10;20);"A";"t");"T";"a");"C";"g");"G";"c")); SEQUENCE(20; 1; 20; -1); 1)))</code>
             </div>
           </div>
         </div>
 
+      <!-- Direct Testable URLs Card (Paste into Browser Address Bar) -->
+      <div class="glass-card rounded-2xl p-5 space-y-4 mb-6">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
+          <div>
+            <span class="text-[11px] font-bold uppercase text-[#006633]">Teste Direto na Barra de Endereços do Navegador</span>
+            <h3 class="text-base font-bold text-slate-900">🔗 3 Links Diretos Prontos para Colar na URL (Espécie Ativa: <span id="direct-url-species-label" class="text-[#003366]">Ovis aries</span>)</h3>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2">
+            <div class="font-bold text-[#003366]">1. Link Direto FASTA (NCBI API)</div>
+            <input id="direct-url-fasta" type="text" readonly class="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 text-[11px] mono text-slate-800" value="" />
+            <div class="flex gap-2">
+              <button id="btn-copy-url-fasta" type="button" class="flex-1 px-2.5 py-1.5 rounded bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold">📋 Copiar URL</button>
+              <a id="link-test-url-fasta" href="#" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1.5 rounded bg-[#003366] text-white font-semibold">Testar ↗</a>
+            </div>
+          </div>
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2">
+            <div class="font-bold text-[#006633]">2. Link Direto CD-Search (wrpsb.cgi por Acesso)</div>
+            <input id="direct-url-wrpsb-acc" type="text" readonly class="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 text-[11px] mono text-slate-800" value="" />
+            <div class="flex gap-2">
+              <button id="btn-copy-url-wrpsb-acc" type="button" class="flex-1 px-2.5 py-1.5 rounded bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold">📋 Copiar URL</button>
+              <a id="link-test-url-wrpsb-acc" href="#" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1.5 rounded bg-[#006633] text-white font-semibold">Testar ↗</a>
+            </div>
+          </div>
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2">
+            <div class="font-bold text-amber-800">3. Link Direto CD-Search (wrpsb.cgi com Sequência)</div>
+            <input id="direct-url-wrpsb-seq" type="text" readonly class="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 text-[11px] mono text-slate-800" value="" />
+            <div class="flex gap-2">
+              <button id="btn-copy-url-wrpsb-seq" type="button" class="flex-1 px-2.5 py-1.5 rounded bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold">📋 Copiar URL</button>
+              <a id="link-test-url-wrpsb-seq" href="#" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1.5 rounded bg-amber-600 text-white font-semibold">Testar ↗</a>
+            </div>
+          </div>
+        </div>
+        <p class="text-[11px] text-slate-600">Nota técnica: O <strong>NCBI ORFfinder</strong> (<code>https://www.ncbi.nlm.nih.gov/orffinder/</code>) não aceita sequência via parâmetro GET na URL; para ele, use o motor integrado na Aba 2 ou copie a sequência em 1 clique.</p>
+      </div>
+
         <!-- F12 Console Script for wrpsb.cgi -->
         <div class="glass-card rounded-2xl p-5 space-y-4">
-          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div class="flex items-center justify-between border-b border-slate-200 pb-3">
             <div>
-              <span class="text-[11px] font-bold uppercase text-amber-400">Automação JavaScript para CD-Search</span>
-              <h3 class="text-base font-bold text-white">⚡ Script de Console (F12) & POST Direto ao wrpsb.cgi</h3>
+              <span class="text-[11px] font-bold uppercase text-amber-700">Automação JavaScript para CD-Search</span>
+              <h3 class="text-base font-bold text-slate-900">⚡ Script de Console (F12) & POST Direto ao wrpsb.cgi</h3>
             </div>
-            <button id="btn-copy-f12-script" class="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition">
+            <button id="btn-copy-f12-script" class="px-3 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-500/40 text-xs font-bold transition">
               📋 Copiar Script F12
             </button>
           </div>
-          <p class="text-xs text-slate-300 leading-relaxed">
-            Como a página <code class="mono text-amber-300">ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi</code> processa buscas via requisição POST de formulário (sem criar uma URL GET estática na barra de endereços), este aplicativo resolve isso de <strong>duas formas</strong>:
+          <p class="text-xs text-slate-700 leading-relaxed">
+            Como a página <code class="mono text-amber-800">ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi</code> processa buscas via requisição POST de formulário (sem criar uma URL GET estática na barra de endereços), este aplicativo resolve isso de <strong>duas formas</strong>:
             <br/>1) Pelo botão laranja <strong>"Submeter Direto ao CD-Search (wrpsb.cgi)"</strong> na Aba 2 (que injeta o POST automaticamente a partir daqui).
-            <br/>2) Pelo script abaixo, que você pode colar no Console (<kbd class="px-1.5 py-0.5 bg-slate-800 rounded">F12</kbd>) dentro da página do NCBI:
+            <br/>2) Pelo script abaixo, que você pode colar no Console (<kbd class="px-1.5 py-0.5 bg-slate-100 rounded">F12</kbd>) dentro da página do NCBI:
           </p>
-          <textarea id="textarea-f12-script" rows="8" readonly class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-[11px] text-amber-300 mono custom-scroll focus:outline-none"></textarea>
+          <textarea id="textarea-f12-script" rows="8" readonly class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-[11px] text-amber-800 mono custom-scroll focus:outline-none"></textarea>
         </div>
       </div>
     </section>
 
   </main>
 
-  <footer class="border-t border-slate-800/80 bg-slate-950/90 py-4 px-4 text-center text-xs text-slate-500">
-    Desenvolvido para o Programa de Pós-Graduação em Agroenergia Digital (PPGAD/UFT) • Disciplina de Bioinformática (Prof. Dr. Horllys Gomes Barreto) • Mestrando: Michael da Silva de Oliveira
+  <footer class="border-t border-slate-200 bg-slate-50 py-4 px-4 text-center text-xs text-slate-500">
+    <strong>APP_NCBI_BIOINFORMATICA</strong> • Criador: <strong>Michael Oliveira</strong> • Programa de Pós-Graduação em Agroenergia Digital (PPGAD / UFT) • Disciplina de Bioinformática (Prof. Dr. Horllys Gomes Barreto)
   </footer>
 
   <!-- ========================================================= -->
@@ -1227,7 +1302,32 @@ Homo sapiens</textarea>
         );
       });
 
-      document.getElementById("kpi-total-species").textContent = appState.speciesList.length + " Espécies";
+      const total = appState.speciesList.length;
+      document.getElementById("kpi-total-species").textContent = `${total} Registro${total === 1 ? "" : "s"}`;
+      document.getElementById("kpi-query-sub").textContent = appState.lastQueryLabel ? `Pesquisa: ${appState.lastQueryLabel}` : "Base de referência carregada";
+      if (total > 0) {
+        let validOrfs = 0;
+        let sumBp = 0;
+        let sumAa = 0;
+        let domNames = new Set();
+        appState.speciesList.forEach(s => {
+          const c = cleanDna(s.seq);
+          sumBp += c.length;
+          sumAa += Math.floor((c.length - 3) / 3);
+          if (c.length % 3 === 0 && c.startsWith("ATG")) validOrfs++;
+          if (s.domName) domNames.add(s.domName);
+        });
+        const pct = Math.round((validOrfs / total) * 100);
+        document.getElementById("kpi-valid-orfs").textContent = `${pct}% Frame +1 (${validOrfs}/${total})`;
+        document.getElementById("kpi-orfs-sub").textContent = `Média: ${Math.round(sumBp / total)} bp (${Math.round(sumAa / total)} aa)`;
+        document.getElementById("kpi-avg-domain").textContent = Array.from(domNames).slice(0, 2).join(" / ") || "CD-Search";
+        document.getElementById("kpi-domain-sub").textContent = `Mapeamento via wrpsb.cgi`;
+      } else {
+        document.getElementById("kpi-valid-orfs").textContent = "0% (Vazio)";
+        document.getElementById("kpi-orfs-sub").textContent = "Aguardando nova busca";
+        document.getElementById("kpi-avg-domain").textContent = "—";
+        document.getElementById("kpi-domain-sub").textContent = "Nenhum registro carregado";
+      }
 
       tbody.innerHTML = filtered.map((item, idx) => {
         const seq = cleanDna(item.seq);
@@ -1244,47 +1344,47 @@ Homo sapiens</textarea>
         const genbankUrl = `https://www.ncbi.nlm.nih.gov/nuccore/${encodeURIComponent(item.accession)}`;
 
         return `
-          <tr class="hover:bg-slate-900/90 transition">
-            <td class="py-3 px-3 font-bold text-slate-400 mono">${String(idx + 1).padStart(2, '0')}</td>
+          <tr class="hover:bg-slate-50 transition">
+            <td class="py-3 px-3 font-bold text-slate-600 mono">${String(idx + 1).padStart(2, '0')}</td>
             <td class="py-3 px-3">
-              <div class="font-bold text-white italic">${item.species}</div>
-              <div class="text-[11px] text-slate-400">${item.common} • ${item.group}</div>
+              <div class="font-bold text-slate-900 italic">${item.species}</div>
+              <div class="text-[11px] text-slate-600">${item.common} • ${item.group}</div>
             </td>
-            <td class="py-3 px-3 font-semibold text-sky-300 mono">${item.gene}</td>
+            <td class="py-3 px-3 font-semibold text-[#003366] mono">${item.gene}</td>
             <td class="py-3 px-3">
-              <div class="font-bold text-amber-300 mono">${item.accession}</div>
+              <div class="font-bold text-amber-800 mono">${item.accession}</div>
               <div class="flex items-center gap-2 mt-1 text-[11px]">
-                <a href="${genbankUrl}" target="_blank" rel="noopener noreferrer" class="text-sky-400 hover:underline">GenBank ↗</a>
+                <a href="${genbankUrl}" target="_blank" rel="noopener noreferrer" class="text-[#003366] hover:underline">GenBank ↗</a>
                 <span class="text-slate-600">|</span>
-                <a href="${efetchUrl}" target="_blank" rel="noopener noreferrer" class="text-emerald-400 hover:underline">API FASTA ↗</a>
+                <a href="${efetchUrl}" target="_blank" rel="noopener noreferrer" class="text-[#006633] hover:underline">API FASTA ↗</a>
               </div>
             </td>
             <td class="py-3 px-3 mono">
-              <div class="font-bold text-white">${lenBp} bp</div>
-              <div class="text-[11px] text-emerald-400">${lenAa} aa • Frame +1</div>
+              <div class="font-bold text-slate-900">${lenBp} bp</div>
+              <div class="text-[11px] text-[#006633]">${lenAa} aa • Frame +1</div>
             </td>
             <td class="py-3 px-3 mono">
-              <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">${startCodon} (1..3)</span>
-              <div class="text-[11px] text-slate-400 mt-0.5">Pos 01..${ntermEnd}</div>
+              <span class="px-1.5 py-0.5 rounded bg-emerald-100 text-[#006633] font-bold">${startCodon} (1..3)</span>
+              <div class="text-[11px] text-slate-600 mt-0.5">Pos 01..${ntermEnd}</div>
             </td>
             <td class="py-3 px-3 mono">
-              <div class="font-bold text-sky-300">${item.domStart} .. ${item.domEnd}</div>
-              <div class="text-[11px] text-slate-400">${domLen} bp • ${item.domName} (${item.domAcc})</div>
+              <div class="font-bold text-[#003366]">${item.domStart} .. ${item.domEnd}</div>
+              <div class="text-[11px] text-slate-600">${domLen} bp • ${item.domName} (${item.domAcc})</div>
             </td>
             <td class="py-3 px-3 mono">
-              <div class="font-bold text-purple-300">${ctermStart} .. ${ctermEnd}</div>
-              <div class="text-[11px] text-slate-400">${item.ctermName}: ${item.ctermStart}..${item.ctermEnd}</div>
+              <div class="font-bold text-indigo-700">${ctermStart} .. ${ctermEnd}</div>
+              <div class="text-[11px] text-slate-600">${item.ctermName}: ${item.ctermStart}..${item.ctermEnd}</div>
             </td>
             <td class="py-3 px-3 mono">
-              <span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold">${stopCodon}</span>
-              <div class="text-[11px] text-slate-400 mt-0.5">${lenBp - 2}..${lenBp}</div>
+              <span class="px-2 py-0.5 rounded bg-rose-100 text-rose-700 font-bold">${stopCodon}</span>
+              <div class="text-[11px] text-slate-600 mt-0.5">${lenBp - 2}..${lenBp}</div>
             </td>
             <td class="py-3 px-3 text-center">
               <div class="flex items-center justify-center gap-1.5">
-                <button data-inspect-id="${item.id}" class="btn-inspect-species px-2.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow transition whitespace-nowrap">
-                  🔬 Inspecionar 3 Etapas
+                <button data-inspect-id="${item.id}" class="btn-inspect-species px-2.5 py-1.5 rounded-lg bg-[#003366] hover:bg-[#002244] text-white font-bold text-xs shadow transition whitespace-nowrap">
+                  ✨ Gerar Formatação
                 </button>
-                <button data-pcr-id="${item.id}" class="btn-pcr-species px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-slate-700 font-bold text-xs transition" title="Desenhar Primers PCR">
+                <button data-pcr-id="${item.id}" class="btn-pcr-species px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-[#006633] border border-slate-300 font-bold text-xs transition" title="Desenhar Primers PCR">
                   🧪 PCR
                 </button>
               </div>
@@ -1366,7 +1466,7 @@ Homo sapiens</textarea>
       const orfs = findOrfsSixFrames(seq, 60);
       const orfTbody = document.getElementById("orffinder-table-body");
       orfTbody.innerHTML = orfs.map((o, idx) => `
-        <tr class="${idx === 0 ? 'bg-emerald-500/15 text-emerald-200 font-bold' : 'text-slate-300'} hover:bg-slate-900">
+        <tr class="${idx === 0 ? 'bg-emerald-50 text-[#006633] font-bold' : 'text-slate-700'} hover:bg-slate-100">
           <td class="py-1.5 px-2.5">${o.label}</td>
           <td class="py-1.5 px-2">${o.strand}</td>
           <td class="py-1.5 px-2">${o.frame}</td>
@@ -1425,21 +1525,21 @@ Homo sapiens</textarea>
       const domBp = dEnd - dStart + 1;
       const ctermBp = Math.max(0, cEnd - cStart + 1);
       document.getElementById("cdd-hits-tbody").innerHTML = `
-        <tr class="bg-sky-500/10">
-          <td class="py-2 px-3 font-bold text-sky-300">${item.domName}</td>
-          <td class="py-2 px-3 mono text-amber-300"><a href="https://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid=${item.domAcc}" target="_blank" rel="noopener noreferrer" class="hover:underline">${item.domAcc} ↗</a></td>
-          <td class="py-2 px-3 text-slate-300">${item.domDesc}</td>
-          <td class="py-2 px-3 mono font-bold text-white">${dStart} - ${dEnd}</td>
-          <td class="py-2 px-3 mono text-sky-300">${domBp} bp</td>
-          <td class="py-2 px-3 mono text-emerald-400 font-bold">${item.domEvalue}</td>
+        <tr class="bg-sky-50">
+          <td class="py-2 px-3 font-bold text-[#003366]">${item.domName}</td>
+          <td class="py-2 px-3 mono text-amber-800"><a href="https://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid=${item.domAcc}" target="_blank" rel="noopener noreferrer" class="hover:underline">${item.domAcc} ↗</a></td>
+          <td class="py-2 px-3 text-slate-700">${item.domDesc}</td>
+          <td class="py-2 px-3 mono font-bold text-slate-900">${dStart} - ${dEnd}</td>
+          <td class="py-2 px-3 mono text-[#003366]">${domBp} bp</td>
+          <td class="py-2 px-3 mono text-[#006633] font-bold">${item.domEvalue}</td>
         </tr>
         <tr>
-          <td class="py-2 px-3 font-bold text-purple-300">${item.ctermName}</td>
-          <td class="py-2 px-3 mono text-amber-300"><a href="https://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid=${item.ctermAcc}" target="_blank" rel="noopener noreferrer" class="hover:underline">${item.ctermAcc} ↗</a></td>
-          <td class="py-2 px-3 text-slate-300">Conserved C-terminal region (${item.ctermName})</td>
-          <td class="py-2 px-3 mono font-bold text-white">${cStart} - ${cEnd}</td>
-          <td class="py-2 px-3 mono text-purple-300">${ctermBp} bp</td>
-          <td class="py-2 px-3 mono text-emerald-400">${item.ctermEvalue}</td>
+          <td class="py-2 px-3 font-bold text-indigo-700">${item.ctermName}</td>
+          <td class="py-2 px-3 mono text-amber-800"><a href="https://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid=${item.ctermAcc}" target="_blank" rel="noopener noreferrer" class="hover:underline">${item.ctermAcc} ↗</a></td>
+          <td class="py-2 px-3 text-slate-700">Conserved C-terminal region (${item.ctermName})</td>
+          <td class="py-2 px-3 mono font-bold text-slate-900">${cStart} - ${cEnd}</td>
+          <td class="py-2 px-3 mono text-indigo-700">${ctermBp} bp</td>
+          <td class="py-2 px-3 mono text-[#006633]">${item.ctermEvalue}</td>
         </tr>
       `;
 
@@ -1453,11 +1553,11 @@ Homo sapiens</textarea>
       // Render Colored Viewer
       const viewer = document.getElementById("colored-sequence-viewer");
       viewer.innerHTML =
-        `<span class="bg-emerald-500/30 text-emerald-200 font-extrabold px-1 rounded border border-emerald-400/50" title="Start Codon (1..3)">${blockStart}</span>` +
-        `<span class="text-amber-200/90" title="N-Terminal (4..${dStart - 1})">${blockNterm}</span>` +
-        `<span class="bg-sky-500/25 text-sky-200 font-bold px-0.5 rounded border-b-2 border-sky-400" title="Domínio Conservado ${item.domName} (${dStart}..${dEnd})">${blockDomain}</span>` +
-        `<span class="text-purple-300" title="Região Restante / ${item.ctermName} (${dEnd + 1}..${N - 3})">${blockCterm}</span>` +
-        `<span class="bg-rose-500/35 text-rose-200 font-extrabold px-1 rounded border border-rose-400/50" title="Stop Codon (${N - 2}..${N})">${blockStop}</span>`;
+        `<span class="bg-emerald-100 text-[#006633] font-extrabold px-1 rounded border border-emerald-400/50" title="Start Codon (1..3)">${blockStart}</span>` +
+        `<span class="text-amber-800" title="N-Terminal (4..${dStart - 1})">${blockNterm}</span>` +
+        `<span class="bg-sky-100 text-[#003366] font-bold px-0.5 rounded border-b-2 border-sky-400" title="Domínio Conservado ${item.domName} (${dStart}..${dEnd})">${blockDomain}</span>` +
+        `<span class="text-indigo-700" title="Região Restante / ${item.ctermName} (${dEnd + 1}..${N - 3})">${blockCterm}</span>` +
+        `<span class="bg-rose-100 text-rose-800 font-extrabold px-1 rounded border border-rose-400/50" title="Stop Codon (${N - 2}..${N})">${blockStop}</span>`;
 
       // Individual Block Cards
       document.getElementById("block-meta-1").textContent = `Pos 1..${dStart - 1} (${dStart - 1} bp • Start: ${blockStart})`;
@@ -1519,15 +1619,15 @@ Homo sapiens</textarea>
         const r = calcPrimerStats(reverseComplement(sub.substring(sub.length - pLen)));
         const dTm = Math.abs(parseFloat(f.tm) - parseFloat(r.tm)).toFixed(1);
         return `
-          <tr class="hover:bg-slate-900">
-            <td class="py-2 px-3 font-bold text-white italic">${sp.species}</td>
-            <td class="py-2 px-3 text-amber-300">${sp.accession}</td>
-            <td class="py-2 px-3 font-bold text-sky-300">${sub.length} bp</td>
-            <td class="py-2 px-3 text-emerald-300 font-bold">${f.seq}</td>
-            <td class="py-2 px-3 text-slate-300">${f.gcPct}% | ${f.tm}°C</td>
-            <td class="py-2 px-3 text-sky-300 font-bold">${r.seq}</td>
-            <td class="py-2 px-3 text-slate-300">${r.gcPct}% | ${r.tm}°C</td>
-            <td class="py-2 px-3">${parseFloat(dTm) <= 5 ? '<span class="text-emerald-400 font-bold">✅ Δ ' + dTm + '°C</span>' : '<span class="text-amber-400 font-bold">⚠️ Δ ' + dTm + '°C</span>'}</td>
+          <tr class="hover:bg-slate-100">
+            <td class="py-2 px-3 font-bold text-slate-900 italic">${sp.species}</td>
+            <td class="py-2 px-3 text-amber-800">${sp.accession}</td>
+            <td class="py-2 px-3 font-bold text-[#003366]">${sub.length} bp</td>
+            <td class="py-2 px-3 text-[#006633] font-bold">${f.seq}</td>
+            <td class="py-2 px-3 text-slate-700">${f.gcPct}% | ${f.tm}°C</td>
+            <td class="py-2 px-3 text-[#003366] font-bold">${r.seq}</td>
+            <td class="py-2 px-3 text-slate-700">${r.gcPct}% | ${r.tm}°C</td>
+            <td class="py-2 px-3">${parseFloat(dTm) <= 5 ? '<span class="text-[#006633] font-bold">✅ Δ ' + dTm + '°C</span>' : '<span class="text-amber-700 font-bold">⚠️ Δ ' + dTm + '°C</span>'}</td>
           </tr>
         `;
       }).join("");
@@ -1551,34 +1651,185 @@ Homo sapiens</textarea>
   }
 })("${escaped}");`;
       document.getElementById("textarea-f12-script").value = scriptCode;
+      const item = appState.speciesList.find(s => s.id === appState.activeSpeciesId) || appState.speciesList[0];
+      if (item) {
+        const cleanSeq = cleanDna(item.seq);
+        const urlFasta = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=${encodeURIComponent(item.accession)}&rettype=fasta&retmode=text`;
+        const urlWrpsbAcc = `https://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?seqinput=${encodeURIComponent(item.accession)}`;
+        const urlWrpsbSeq = `https://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi?SEQUENCE=${encodeURIComponent(cleanSeq)}`;
+        document.getElementById("direct-url-species-label").textContent = `${item.species} (${item.accession})`;
+        document.getElementById("direct-url-fasta").value = urlFasta;
+        document.getElementById("link-test-url-fasta").href = urlFasta;
+        document.getElementById("direct-url-wrpsb-acc").value = urlWrpsbAcc;
+        document.getElementById("link-test-url-wrpsb-acc").href = urlWrpsbAcc;
+        document.getElementById("direct-url-wrpsb-seq").value = urlWrpsbSeq;
+        document.getElementById("link-test-url-wrpsb-seq").href = urlWrpsbSeq;
+      }
     }
 
-    // Live NCBI E-utilities Fetch (with graceful fallback)
-    async function fetchFromNcbiApi(queryOrAcc) {
-      const logBox = document.getElementById("batch-log-box");
-      logBox.textContent = `⏳ Consultando API NCBI E-utilities para "${queryOrAcc}"...`;
+    // Persistence Helpers (localStorage)
+    const STORAGE_KEY = "ncbi_bioinfo_studio_v3_species";
+    function saveStateToStorage() {
       try {
-        let acc = queryOrAcc.trim();
-        // If it contains spaces, search UID first via esearch.fcgi
-        if (acc.includes(" ") || !/\d/.test(acc)) {
-          const esearchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=nuccore&term=${encodeURIComponent(acc + " AND complete cds")}&retmax=1&retmode=json`;
-          const resSearch = await fetch(esearchUrl);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState.speciesList));
+      } catch (e) {}
+    }
+    function loadStateFromStorage() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            appState.speciesList = parsed;
+            appState.activeSpeciesId = parsed[0].id;
+          }
+        }
+      } catch (e) {}
+    }
+
+    // Parse Multi-FASTA text from NCBI into structured species entries
+    function parseMultiFastaToEntries(fastaText, queryLabel) {
+      const blocks = fastaText.split(/^>/m).map(b => b.trim()).filter(Boolean);
+      const entries = [];
+      for (const block of blocks) {
+        const lines = block.split(/\r?\n/);
+        const header = lines[0] || "";
+        const rawSeq = cleanDna(lines.slice(1).join(""));
+        if (rawSeq.length < 30) continue;
+        const orfs = findOrfsSixFrames(rawSeq, 60);
+        const bestSeq = orfs.length > 0 ? orfs[0].seq : rawSeq;
+        const parts = header.split(/\s+/);
+        const accCode = parts[0] || "NCBI_SEQ";
+        const restHeader = parts.slice(1).join(" ");
+        // Try to detect binomial species name (Genus species) in header, fallback to first 2 words
+        const binomMatch = restHeader.match(/\b([A-Z][a-z]{2,}\s+[a-z]{3,})\b/);
+        const speciesName = binomMatch ? binomMatch[1] : (parts.slice(1, 3).join(" ").replace(/[,;]/g, "") || "Espécie NCBI");
+        const desc = restHeader;
+        const N = bestSeq.length;
+        const estDomStart = Math.min(Math.max(4, Math.floor(N * 0.08)), Math.max(4, N - 30));
+        const estDomEnd = Math.max(estDomStart + 24, Math.floor(N * 0.82));
+        entries.push({
+          id: "ncbi_" + accCode.replace(/[^a-zA-Z0-9]/g, "_") + "_" + Math.random().toString(36).substring(2, 6),
+          order: 0,
+          species: speciesName,
+          common: desc ? desc.substring(0, 38) : "Busca Ao Vivo NCBI",
+          group: "NCBI Live",
+          gene: queryLabel.length > 35 ? queryLabel.substring(0, 32) + "..." : queryLabel,
+          accession: accCode,
+          altAccession: accCode,
+          domName: "Domínio_CDS",
+          domAcc: "wrpsb.cgi",
+          domDesc: desc || "Submeta via botão wrpsb.cgi para confirmar PSSMs",
+          domStart: estDomStart,
+          domEnd: estDomEnd,
+          domEvalue: "Verificar wrpsb",
+          ctermName: "C-Terminal",
+          ctermAcc: "3'-Region",
+          ctermStart: Math.min(estDomEnd + 1, N - 3),
+          ctermEnd: N - 3,
+          ctermEvalue: "-",
+          seq: bestSeq
+        });
+      }
+      return entries;
+    }
+
+    // Extract search term if user pastes a full NCBI URL
+    function normalizeNcbiQuery(rawInput) {
+      let s = (rawInput || "").trim();
+      if (/^https?:\/\//i.test(s)) {
+        try {
+          const u = new URL(s);
+          const termParam = u.searchParams.get("term");
+          if (termParam) return termParam.replace(/\+/g, " ").trim();
+        } catch (e) {}
+      }
+      return s;
+    }
+
+    // Smart In-Memory Filter (supports NCBI URLs, boolean syntax, stems like flowers->flower)
+    function searchLocalMemory(queryStr) {
+      const normalized = normalizeNcbiQuery(queryStr);
+      const q = normalized.toLowerCase();
+      if (!q) return [];
+      const cleaned = q
+        .replace(/\[[^\]]+\]/g, " ")
+        .replace(/["'()]/g, " ")
+        .replace(/\b(and|or|not|complete|cds|all|fields|organism|title|gene|prop|biomol_mrna)\b/gi, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      const tokens = cleaned.split(" ").filter(t => t.length >= 2).map(t => t.replace(/s$/, ""));
+      if (tokens.length === 0) return [...INITIAL_SPECIES_DB];
+
+      const buildHaystack = (item) => [
+        item.species,
+        item.common,
+        item.group,
+        item.gene,
+        item.accession,
+        item.altAccession,
+        item.domName,
+        item.domAcc,
+        item.domDesc || "",
+        item.gene.toLowerCase().includes("avpr1a") ? "v1ar" : ""
+      ].join(" ").toLowerCase();
+
+      const strict = INITIAL_SPECIES_DB.filter(item => {
+        const hay = buildHaystack(item);
+        return tokens.every(tok => hay.includes(tok));
+      });
+      if (strict.length > 0) return strict;
+
+      // Fallback: match any primary token (e.g. "coffea" or "arabica")
+      return INITIAL_SPECIES_DB.filter(item => {
+        const hay = buildHaystack(item);
+        return tokens.some(tok => tok.length >= 4 && hay.includes(tok));
+      });
+    }
+
+    // Helper: fetch with timeout
+    async function fetchWithTimeout(url, ms = 10000) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), ms);
+      try {
+        const res = await fetch(url, { signal: controller.signal });
+        return res;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    // Live NCBI E-utilities Fetch (supports verbatim NCBI queries, full URLs & accessions)
+    async function fetchFromNcbiApi(queryOrAcc, retmax = 5) {
+      const logBox = document.getElementById("batch-log-box");
+      const trimmed = normalizeNcbiQuery(queryOrAcc);
+      logBox.textContent = `⏳ Consultando API NCBI E-utilities para: ${trimmed}...`;
+      try {
+        let idParam = trimmed;
+        const isSingleAccession = /^[A-Za-z]{1,4}_?\d+(\.\d+)?$/.test(trimmed);
+        if (!isSingleAccession) {
+          const hasSyntax = /\[|\bAND\b|\bOR\b|complete cds/i.test(trimmed);
+          const finalTerm = hasSyntax ? trimmed : `${trimmed} AND complete cds`;
+          const esearchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=nuccore&term=${encodeURIComponent(finalTerm)}&retmax=${retmax}&retmode=json`;
+          const resSearch = await fetchWithTimeout(esearchUrl, 10000);
+          if (!resSearch.ok) throw new Error("esearch HTTP " + resSearch.status);
           const dataSearch = await resSearch.json();
           const idList = dataSearch?.esearchresult?.idlist || [];
           if (idList.length === 0) {
-            throw new Error("Nenhum UID retornado pela busca.");
+            throw new Error("Nenhum registro em nuccore encontrado para esta busca.");
           }
-          acc = idList[0];
+          idParam = idList.join(",");
         }
-        const efetchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=${encodeURIComponent(acc)}&rettype=fasta&retmode=text`;
-        const resFetch = await fetch(efetchUrl);
-        if (!resFetch.ok) throw new Error("HTTP " + resFetch.status);
+        const efetchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=${encodeURIComponent(idParam)}&rettype=fasta&retmode=text`;
+        const resFetch = await fetchWithTimeout(efetchUrl, 12000);
+        if (!resFetch.ok) throw new Error("efetch HTTP " + resFetch.status);
         const fastaText = await resFetch.text();
-        if (!fastaText || !fastaText.includes(">")) throw new Error("FASTA vazio");
-        logBox.textContent = `✅ Sequência obtida ao vivo da API NCBI E-utilities (${acc})!`;
+        if (!fastaText || !fastaText.includes(">")) throw new Error("FASTA vazio retornado pelo NCBI.");
+        logBox.textContent = `✅ Sucesso! Sequência(s) obtida(s) ao vivo da API NCBI E-utilities.`;
         return fastaText.trim();
       } catch (err) {
-        logBox.textContent = `ℹ️ Modo Offline/Seguro: usando banco validado local ou cole o FASTA manualmente (${err.message}).`;
+        const reason = err.name === "AbortError" ? "Tempo limite excedido" : err.message;
+        logBox.textContent = `ℹ️ Conexão direta bloqueada/indisponível (${reason}). Use "💾 Baixar App (.html)" para rodar sem bloqueio de rede ou veja os dados locais abaixo.`;
         return null;
       }
     }
@@ -1644,102 +1895,173 @@ Homo sapiens</textarea>
         });
       });
 
+      // Download Self-Contained App HTML for local/GitHub Pages execution
+      document.getElementById("btn-download-app-html").addEventListener("click", () => {
+        const docHtml = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+        const blob = new Blob([docHtml], { type: "text/html;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "APP_NCBI_BIOINFORMATICA_Michael_Oliveira.html";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast("Aplicativo .html baixado! Abra no Chrome para acesso livre ao NCBI.");
+      });
+
       // Dynamic NCBI Query Link Updater
       const queryInput = document.getElementById("batch-gene-query");
       const queryLink = document.getElementById("link-dynamic-ncbi-query");
       queryInput.addEventListener("input", () => {
-        queryLink.href = `https://www.ncbi.nlm.nih.gov/nuccore/?term=${encodeURIComponent(queryInput.value.trim())}`;
+        const norm = normalizeNcbiQuery(queryInput.value);
+        queryLink.href = `https://www.ncbi.nlm.nih.gov/nuccore/?term=${encodeURIComponent(norm)}`;
       });
 
-      // Presets
-      document.getElementById("btn-preset-animals").addEventListener("click", () => {
-        appState.speciesList = INITIAL_SPECIES_DB.filter(s => s.group !== "Planta");
-        appState.activeSpeciesId = appState.speciesList[0].id;
+      // Clear Table & Example Helper
+      document.getElementById("btn-clear-table").addEventListener("click", () => {
+        appState.speciesList = [];
+        appState.lastQueryLabel = "";
+        document.getElementById("batch-species-input").value = "";
+        saveStateToStorage();
         renderSpeciesMatrix();
-        renderInspectorView();
-        renderPcrView();
-        showToast("Lote das 10 Espécies Animais (V1aR) carregado!");
+        document.getElementById("kpi-api-status").textContent = "Tela Limpa";
+        document.getElementById("kpi-api-sub").textContent = "Pronto para nova pesquisa";
+        showToast("Banco de dados da tela limpo!");
       });
 
-      document.getElementById("btn-preset-plants").addEventListener("click", () => {
-        appState.speciesList = INITIAL_SPECIES_DB.filter(s => s.group === "Planta");
-        appState.activeSpeciesId = appState.speciesList[0].id;
-        renderSpeciesMatrix();
-        renderInspectorView();
-        renderPcrView();
-        showToast("Lote de Plantas (FLC / CaFLC - MADS-box) carregado!");
+      document.getElementById("btn-fill-example-coffee").addEventListener("click", () => {
+        const ex = '"Coffea arabica"[Organism] AND flower[All Fields] AND "complete cds"[Title]';
+        document.getElementById("batch-gene-query").value = ex;
+        document.getElementById("link-dynamic-ncbi-query").href = `https://www.ncbi.nlm.nih.gov/nuccore/?term=${encodeURIComponent(ex)}`;
+        showToast("Expressão de exemplo preenchida! Clique em Buscar Expressão.");
       });
 
-      document.getElementById("btn-preset-all").addEventListener("click", () => {
+      // Direct URL Copy Buttons in Tab 4
+      document.getElementById("btn-copy-url-fasta").addEventListener("click", () => {
+        copyTextToClipboard(document.getElementById("direct-url-fasta").value, "URL Direta FASTA copiada!");
+      });
+      document.getElementById("btn-copy-url-wrpsb-acc").addEventListener("click", () => {
+        copyTextToClipboard(document.getElementById("direct-url-wrpsb-acc").value, "URL Direta wrpsb.cgi (Acesso) copiada!");
+      });
+      document.getElementById("btn-copy-url-wrpsb-seq").addEventListener("click", () => {
+        copyTextToClipboard(document.getElementById("direct-url-wrpsb-seq").value, "URL Direta wrpsb.cgi (Sequência) copiada!");
+      });
+
+      // Direct Exact NCBI Query Search Button (Live API + Local Memory Fallback)
+      document.getElementById("btn-search-exact-query").addEventListener("click", async () => {
+        const queryStr = document.getElementById("batch-gene-query").value.trim();
+        if (!queryStr) {
+          showToast("Digite uma expressão de busca do NCBI!", "⚠️");
+          return;
+        }
+        const retmax = parseInt(document.getElementById("batch-retmax").value, 10) || 5;
+        const appendMode = document.getElementById("chk-append-results").checked;
+        if (!appendMode) {
+          appState.speciesList = [];
+          renderSpeciesMatrix();
+        }
+        const fasta = await fetchFromNcbiApi(queryStr, retmax);
+        let newEntries = fasta ? parseMultiFastaToEntries(fasta, queryStr) : [];
+        let sourceTag = "Ao Vivo (NCBI)";
+
+        if (newEntries.length === 0) {
+          const localMatches = searchLocalMemory(queryStr);
+          if (localMatches.length > 0) {
+            newEntries = localMatches.slice(0, Math.max(retmax, localMatches.length));
+            sourceTag = "Base Validada (Memória)";
+          }
+        }
+
+        if (newEntries.length > 0) {
+          appState.speciesList = appendMode ? [...newEntries, ...appState.speciesList] : newEntries;
+          appState.activeSpeciesId = newEntries[0].id;
+          appState.lastQueryLabel = queryStr;
+          document.getElementById("batch-species-input").value = appState.speciesList.map(e => `${e.accession} (${e.species})`).join("\n");
+          document.getElementById("kpi-api-status").textContent = sourceTag;
+          document.getElementById("kpi-api-sub").textContent = `Atualizado às ${new Date().toLocaleTimeString("pt-BR")}`;
+          document.getElementById("batch-log-box").textContent = `✅ ${newEntries.length} registro(s) carregado(s) via ${sourceTag} para "${queryStr}".`;
+          saveStateToStorage();
+          renderSpeciesMatrix();
+          renderInspectorView();
+          renderPcrView();
+          showToast(`${newEntries.length} registro(s) encontrado(s) (${sourceTag})!`);
+        } else {
+          document.getElementById("kpi-api-status").textContent = "Sem Resultados";
+          document.getElementById("kpi-api-sub").textContent = "Tente outra expressão ou cole o FASTA";
+          showToast("Nenhum registro encontrado no NCBI ou na memória para essa expressão.", "⚠️");
+        }
+      });
+
+      // Reset to 12 Default Records
+      document.getElementById("btn-reset-defaults").addEventListener("click", () => {
         appState.speciesList = [...INITIAL_SPECIES_DB];
         appState.activeSpeciesId = appState.speciesList[0].id;
+        saveStateToStorage();
         renderSpeciesMatrix();
         renderInspectorView();
         renderPcrView();
-        showToast("Todos os 12 registros (Animais + Plantas) carregados!");
+        document.getElementById("batch-log-box").textContent = "Status: 12 registros padrão restaurados.";
+        showToast("Lista restaurada para os 12 registros padrão!");
       });
 
       // Run Batch Automation Button
       document.getElementById("btn-run-batch-ncbi").addEventListener("click", async () => {
         const lines = document.getElementById("batch-species-input").value.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-        const geneTerm = document.getElementById("batch-gene-query").value.trim() || "AVPR1A";
+        const geneTerm = document.getElementById("batch-gene-query").value.trim() || "V1ar and Complete CDS";
+        const isDefaultV1ar = /^(v1ar\s+and\s+complete\s+cds|avpr1a)$/i.test(geneTerm);
+        const appendMode = document.getElementById("chk-append-results").checked;
         const logBox = document.getElementById("batch-log-box");
+        if (!appendMode) {
+          appState.speciesList = [];
+          renderSpeciesMatrix();
+        }
         let matched = [];
 
         for (let line of lines) {
-          const existing = INITIAL_SPECIES_DB.find(
+          const existing = isDefaultV1ar ? INITIAL_SPECIES_DB.find(
             item => item.species.toLowerCase().includes(line.toLowerCase()) ||
                     item.accession.toLowerCase() === line.toLowerCase() ||
                     item.altAccession.toLowerCase() === line.toLowerCase()
-          );
+          ) : null;
+
           if (existing) {
             matched.push({ ...existing });
           } else {
-            // Try live E-utilities API fetch for new training species
-            const fasta = await fetchFromNcbiApi(`${line} ${geneTerm}`);
+            const cleanLine = line.replace(/\s*\([^)]*\)/g, "").trim();
+            const isAccLine = /^[A-Za-z]{1,4}_?\d+(\.\d+)?$/.test(cleanLine);
+            const queryToRun = isAccLine ? cleanLine : `"${cleanLine}"[Organism] AND (${geneTerm})`;
+            const fasta = await fetchFromNcbiApi(queryToRun, 1);
             if (fasta) {
-              const cleaned = cleanDna(fasta);
-              const orfs = findOrfsSixFrames(cleaned, 90);
-              const bestSeq = orfs.length > 0 ? orfs[0].seq : cleaned;
-              const headerLine = fasta.split(/\r?\n/)[0] || "";
-              const accMatch = headerLine.match(/^>([^\s]+)/);
-              const accCode = accMatch ? accMatch[1] : line;
-              matched.push({
-                id: "custom_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
-                order: matched.length + 1,
-                species: line,
-                common: "Nova Espécie (API NCBI)",
-                group: "Vertebrado",
-                gene: geneTerm,
-                accession: accCode,
-                altAccession: accCode,
-                domName: "7tmA_V1aR",
-                domAcc: "cd15385",
-                domDesc: "Conserved receptor domain mapped via NCBI pipeline",
-                domStart: Math.min(154, Math.max(4, Math.floor(bestSeq.length * 0.12))),
-                domEnd: Math.max(180, Math.floor(bestSeq.length * 0.85)),
-                domEvalue: "0.00",
-                ctermName: "V1R_C",
-                ctermAcc: "pfam08983",
-                ctermStart: Math.floor(bestSeq.length * 0.88),
-                ctermEnd: bestSeq.length - 3,
-                ctermEvalue: "1.0e-18",
-                seq: bestSeq
-              });
+              const parsed = parseMultiFastaToEntries(fasta, geneTerm);
+              if (parsed.length > 0) {
+                if (!isAccLine) parsed[0].species = cleanLine;
+                matched.push(parsed[0]);
+              }
+            } else {
+              const localFallback = searchLocalMemory(cleanLine);
+              if (localFallback.length > 0) {
+                matched.push({ ...localFallback[0] });
+              }
             }
           }
         }
 
         if (matched.length > 0) {
-          appState.speciesList = matched;
+          appState.speciesList = appendMode ? [...matched, ...appState.speciesList] : matched;
           appState.activeSpeciesId = matched[0].id;
+          appState.lastQueryLabel = `Lote (${matched.length} itens)`;
+          document.getElementById("batch-species-input").value = appState.speciesList.map(e => `${e.accession} (${e.species})`).join("\n");
+          document.getElementById("kpi-api-status").textContent = "Lote Processado";
+          document.getElementById("kpi-api-sub").textContent = `Atualizado às ${new Date().toLocaleTimeString("pt-BR")}`;
+          saveStateToStorage();
           renderSpeciesMatrix();
           renderInspectorView();
           renderPcrView();
-          logBox.textContent = `✅ Lote processado com sucesso: ${matched.length} espécies mapeadas (FASTA + ORFfinder + Domínios)!`;
+          logBox.textContent = `✅ Lote processado com sucesso: ${matched.length} espécies mapeadas (FASTA + ORFfinder)!`;
           showToast(`${matched.length} espécies processadas no lote!`);
         } else {
-          showToast("Nenhuma espécie encontrada. Verifique os nomes ou cole o FASTA.", "⚠️");
+          showToast("Nenhuma espécie encontrada no NCBI para essa busca.", "⚠️");
         }
       });
 
@@ -1805,8 +2127,9 @@ Homo sapiens</textarea>
           seq: cdsSeq
         };
 
-        appState.speciesList.push(newEntry);
+        appState.speciesList.unshift(newEntry);
         appState.activeSpeciesId = newEntry.id;
+        saveStateToStorage();
         renderSpeciesMatrix();
         renderInspectorView();
         renderPcrView();
@@ -1842,6 +2165,77 @@ Homo sapiens</textarea>
           ].join("\t");
         });
         copyTextToClipboard([headers.join("\t"), ...rows].join("\n"), "Tabela TSV copiada! Cole direto no Google Sheets (Ctrl+V).");
+      });
+
+      // Download Excel (.xlsx) of Current/Last Search
+      document.getElementById("btn-download-xlsx").addEventListener("click", () => {
+        if (typeof XLSX === "undefined") {
+          showToast("Biblioteca Excel ainda carregando. Tente novamente em 1 segundo.", "⚠️");
+          return;
+        }
+        if (appState.speciesList.length === 0) {
+          showToast("Não há registros na tabela atual para exportar.", "⚠️");
+          return;
+        }
+        const pLen = appState.pcrPrimerLen || 20;
+        const isDomain = appState.pcrTargetRegion === "domain";
+
+        const cdsRows = appState.speciesList.map((s, idx) => {
+          const clean = cleanDna(s.seq);
+          const N = clean.length;
+          return {
+            "Item": idx + 1,
+            "Especie": s.species,
+            "Nome_Comum": s.common,
+            "Gene": s.gene,
+            "Acesso_GenBank": s.accession,
+            "Link_GenBank": `https://www.ncbi.nlm.nih.gov/nuccore/${s.accession}`,
+            "Link_FASTA_API": `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=${s.accession}&rettype=fasta&retmode=text`,
+            "Total_bp": N,
+            "Total_aa": Math.floor((N - 3) / 3),
+            "Frame": (N % 3 === 0 && clean.startsWith("ATG")) ? "ORF Completa (+1)" : "Verificar Frame",
+            "Start_Codon": clean.substring(0, 3),
+            "Regiao_N_Terminal": clean.substring(3, s.domStart - 1),
+            "Dominio_Principal_Nome": `${s.domName} (${s.domAcc})`,
+            "Dominio_Intervalo": `${s.domStart}..${s.domEnd}`,
+            "Seq_Dominio_Principal": clean.substring(s.domStart - 1, s.domEnd),
+            "Regiao_C_Terminal": clean.substring(s.domEnd, N - 3),
+            "Stop_Codon": clean.substring(N - 3),
+            "Sequencia_CDS_Completa": clean
+          };
+        });
+
+        const pcrRows = appState.speciesList.map((s) => {
+          const clean = cleanDna(s.seq);
+          const st = isDomain ? s.domStart : 1;
+          const en = isDomain ? s.domEnd : clean.length;
+          const sub = clean.substring(st - 1, en);
+          const f = calcPrimerStats(sub.substring(0, pLen));
+          const r = calcPrimerStats(reverseComplement(sub.substring(Math.max(0, sub.length - pLen))));
+          const dTm = Math.abs(parseFloat(f.tm) - parseFloat(r.tm)).toFixed(1);
+          return {
+            "Especie": s.species,
+            "Acesso_GenBank": s.accession,
+            "Regiao_Alvo": isDomain ? `${s.domName} (${st}..${en})` : `CDS Completa (1..${clean.length})`,
+            "Amplicon_bp": sub.length,
+            "Primer_Forward_5_3": f.seq,
+            "GC_Forward_%": parseFloat(f.gcPct),
+            "Tm_Forward_C": parseFloat(f.tm),
+            "Primer_Reverse_5_3": r.seq,
+            "GC_Reverse_%": parseFloat(r.gcPct),
+            "Tm_Reverse_C": parseFloat(r.tm),
+            "Delta_Tm_C": parseFloat(dTm),
+            "Status_PCR": parseFloat(dTm) <= 5 ? "Par Ideal (Delta <= 5 C)" : "Ajustar Tamanho"
+          };
+        });
+
+        const wb = XLSX.utils.book_new();
+        const ws1 = XLSX.utils.json_to_sheet(cdsRows);
+        const ws2 = XLSX.utils.json_to_sheet(pcrRows);
+        XLSX.utils.book_append_sheet(wb, ws1, "Automacao_NCBI_CDS");
+        XLSX.utils.book_append_sheet(wb, ws2, "Primers_PCR");
+        XLSX.writeFile(wb, "NCBI_BioInfo_Ultima_Pesquisa.xlsx");
+        showToast("Arquivo Excel (.xlsx) da última pesquisa baixado!");
       });
 
       // Download CSV
@@ -1960,7 +2354,8 @@ Homo sapiens</textarea>
 
       document.getElementById("btn-export-report").addEventListener("click", downloadAcademicReport);
 
-      // Initial Render
+      // Load persisted records & Initial Render
+      loadStateFromStorage();
       renderSpeciesMatrix();
       renderInspectorView();
       renderPcrView();
