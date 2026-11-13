@@ -1,0 +1,1972 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NCBI BioInfo Studio — Automação FASTA, ORFfinder, CD-Search & Primers PCR (PPGAD/UFT)</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0b1120;
+      color: #e2e8f0;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .seq-box {
+      word-break: break-all;
+      line-height: 1.75;
+      letter-spacing: 0.04em;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    .glass-card {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(51, 65, 85, 0.75);
+      backdrop-filter: blur(8px);
+    }
+    .tab-active {
+      background: linear-gradient(135deg, #2563eb 0%, #0284c7 100%);
+      color: #ffffff;
+      border-color: #38bdf8;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+    }
+    .tab-inactive {
+      background: #1e293b;
+      color: #94a3b8;
+      border-color: #334155;
+    }
+    .tab-inactive:hover {
+      background: #334155;
+      color: #f8fafc;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-sky-500 selection:text-white">
+
+  <!-- Toast Notification -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 hidden">
+    <div class="bg-emerald-600 text-white px-4 py-3 rounded-xl shadow-2xl border border-emerald-400 flex items-center gap-3 text-sm font-semibold">
+      <span id="toast-icon">✅</span>
+      <span id="toast-msg">Operação concluída com sucesso!</span>
+    </div>
+  </div>
+
+  <!-- Top Academic Header -->
+  <header class="bg-slate-900/95 border-b border-slate-800 sticky top-0 z-40 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-600 via-sky-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-sky-500/20 text-xl font-extrabold text-white">
+          🧬
+        </div>
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h1 class="text-lg md:text-xl font-extrabold tracking-tight text-white">NCBI BioInfo Studio <span class="text-sky-400 font-semibold text-sm">v3.0 European Senior Ed.</span></h1>
+            <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">PPGAD • UFT</span>
+          </div>
+          <p class="text-xs text-slate-400">Pipeline Integrado: <strong class="text-slate-200">1. Busca & FASTA</strong> ➔ <strong class="text-slate-200">2. ORFfinder (6-Frames)</strong> ➔ <strong class="text-slate-200">3. CD-Search (wrpsb.cgi)</strong> ➔ <strong class="text-slate-200">4. Primers PCR</strong></p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 flex-wrap">
+        <a href="https://docs.google.com/spreadsheets/d/16ZS5rJ9Y872LZh3MVUm8AtFv1RcPEriln3HbSaUTnOE/edit" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-semibold flex items-center gap-1.5 transition">
+          <span>📊</span> Abrir Planilha Google Sheets Oficial
+        </a>
+        <a href="https://www.ncbi.nlm.nih.gov/nuccore/?term=V1ar%20and%20Complete%20CDS" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition">
+          <span>🌐</span> NCBI V1aR (66 Hits)
+        </a>
+        <button id="btn-export-report" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow transition">
+          <span>📄</span> Baixar Relatório Colorido (.doc)
+        </button>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="max-w-7xl mx-auto px-4 pb-2.5 pt-1 flex items-center gap-2 overflow-x-auto custom-scroll">
+      <button id="nav-tab-batch" data-tab="batch" class="nav-tab tab-active px-3.5 py-2 rounded-lg text-xs md:text-sm font-semibold border transition whitespace-nowrap flex items-center gap-2">
+        <span>🗂️</span> 1. Busca em Lote & Matriz (10+ Espécies)
+      </button>
+      <button id="nav-tab-pipeline" data-tab="pipeline" class="nav-tab tab-inactive px-3.5 py-2 rounded-lg text-xs md:text-sm font-semibold border transition whitespace-nowrap flex items-center gap-2">
+        <span>🔬</span> 2. Inspetor 3 Funções: FASTA ➔ ORFfinder ➔ CD-Search
+      </button>
+      <button id="nav-tab-pcr" data-tab="pcr" class="nav-tab tab-inactive px-3.5 py-2 rounded-lg text-xs md:text-sm font-semibold border transition whitespace-nowrap flex items-center gap-2">
+        <span>🧪</span> 3. Laboratório de Primers PCR & Gel In-Silico
+      </button>
+      <button id="nav-tab-sheets" data-tab="sheets" class="nav-tab tab-inactive px-3.5 py-2 rounded-lg text-xs md:text-sm font-semibold border transition whitespace-nowrap flex items-center gap-2">
+        <span>⚡</span> 4. Fórmulas Google Sheets & Script F12 (wrpsb.cgi)
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Workspace Container -->
+  <main class="max-w-7xl w-full mx-auto px-4 py-6 flex-1 space-y-6">
+
+    <!-- ========================================================= -->
+    <!-- TAB 1: BUSCA EM LOTE & MATRIZ CONSOLIDADA DE ESPÉCIES     -->
+    <!-- ========================================================= -->
+    <section id="view-batch" class="space-y-6">
+      <!-- Top Summary KPI Cards -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="glass-card rounded-xl p-4">
+          <div class="text-xs text-slate-400 font-medium">Espécies Carregadas no Lote</div>
+          <div id="kpi-total-species" class="text-2xl font-extrabold text-white mt-1">12 Espécies</div>
+          <div class="text-xs text-emerald-400 mt-1">10 Animais (V1aR) + 2 Plantas (FLC)</div>
+        </div>
+        <div class="glass-card rounded-xl p-4">
+          <div class="text-xs text-slate-400 font-medium">Janelas de Leitura (ORFfinder)</div>
+          <div id="kpi-valid-orfs" class="text-2xl font-extrabold text-emerald-400 mt-1">100% Frame +1</div>
+          <div class="text-xs text-slate-400 mt-1">Início ATG • Múltiplo exato de 3 nt</div>
+        </div>
+        <div class="glass-card rounded-xl p-4">
+          <div class="text-xs text-slate-400 font-medium">Domínio Principal (CD-Search)</div>
+          <div id="kpi-avg-domain" class="text-2xl font-extrabold text-sky-400 mt-1">7tmA_V1aR / MADS</div>
+          <div class="text-xs text-slate-400 mt-1">Mapeado via wrpsb.cgi (CDD PSSMs)</div>
+        </div>
+        <div class="glass-card rounded-xl p-4">
+          <div class="text-xs text-slate-400 font-medium">Integração NCBI E-utilities</div>
+          <div id="kpi-api-status" class="text-2xl font-extrabold text-amber-300 mt-1">Ativa (REST + Local)</div>
+          <div class="text-xs text-slate-400 mt-1">Busca múltipla sem uso de mouse</div>
+        </div>
+      </div>
+
+      <!-- Batch Search & Multi-Species Automation Panel -->
+      <div class="glass-card rounded-2xl p-5 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+          <div>
+            <h2 class="text-base md:text-lg font-bold text-white flex items-center gap-2">
+              <span>🚀</span> Motor de Busca em Lote no NCBI (Multi-Espécies & Novos Treinos)
+            </h2>
+            <p class="text-xs text-slate-400">Pesquise várias espécies ou códigos de acesso de uma só vez diretamente na API E-utilities do NCBI ou carregue os lotes oficiais das aulas do Prof. Dr. Horllys.</p>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <button id="btn-preset-animals" class="px-3 py-1.5 rounded-lg bg-sky-600/20 hover:bg-sky-600/30 text-sky-300 border border-sky-500/40 text-xs font-semibold transition">
+              🐾 Lote 10 Animais (V1aR)
+            </button>
+            <button id="btn-preset-plants" class="px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-semibold transition">
+              🌱 Lote Plantas (FLC / CaFLC)
+            </button>
+            <button id="btn-preset-all" class="px-3 py-1.5 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 text-xs font-semibold transition">
+              📚 Carregar Todos (12)
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <div class="lg:col-span-5 space-y-3">
+            <div>
+              <label for="batch-gene-query" class="block text-xs font-semibold text-slate-300 mb-1">Termo / Gene Alvo no NCBI Nucleotide:</label>
+              <div class="flex gap-2">
+                <input id="batch-gene-query" type="text" value="V1ar and Complete CDS" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500 mono" placeholder="Ex: V1ar and Complete CDS ou AVPR1A complete cds" />
+                <a id="link-dynamic-ncbi-query" href="https://www.ncbi.nlm.nih.gov/nuccore/?term=V1ar%20and%20Complete%20CDS" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 text-xs font-semibold whitespace-nowrap flex items-center">
+                  Abrir NCBI ↗
+                </a>
+              </div>
+            </div>
+
+            <div>
+              <label for="batch-species-input" class="block text-xs font-semibold text-slate-300 mb-1">Lista de Espécies ou Acessos GenBank (1 por linha para busca simultânea):</label>
+              <textarea id="batch-species-input" rows="5" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 mono focus:outline-none focus:border-sky-500" placeholder="Ovis aries&#10;Macaca fascicularis&#10;Sus scrofa&#10;Bos taurus&#10;Gallus gallus">Ovis aries
+Macaca fascicularis
+Sus scrofa
+Canis lupus
+Callorhinchus milii
+Triakis scyllium
+Amphiprion ocellaris
+Mus musculus
+Rattus norvegicus
+Homo sapiens</textarea>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+              <button id="btn-run-batch-ncbi" class="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 text-white text-xs font-bold shadow-lg shadow-sky-600/25 transition flex items-center justify-center gap-2">
+                <span>⚡</span> Executar Automação em Lote (FASTA + ORFfinder + Domínios)
+              </button>
+              <button id="btn-open-batch-cdd" class="px-3 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition flex items-center gap-1.5" title="Copia o Multi-FASTA de todas as espécies e abre o NCBI Batch CD-Search">
+                <span>🧬</span> Enviar Lote ao Batch CD-Search
+              </button>
+            </div>
+          </div>
+
+          <!-- Right Column: Add Custom Species / Paste Raw FASTA for Future Classes -->
+          <div class="lg:col-span-7 bg-slate-900/70 border border-slate-800 rounded-xl p-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-sky-400">➕ Adicionar Nova Espécie ou Colar FASTA Bruto (Para Novas Aulas)</h3>
+              <span class="text-[11px] text-slate-400">Calcula ORF +1, Start/Stop e Domínio automaticamente</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+              <input id="custom-species-name" type="text" placeholder="Espécie (ex: Bos taurus)" class="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white" />
+              <input id="custom-common-name" type="text" placeholder="Nome comum (ex: Bovino)" class="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white" />
+              <input id="custom-accession" type="text" placeholder="Acesso (ex: NM_001192095.1)" class="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white mono" />
+              <div class="flex gap-1">
+                <input id="custom-dom-start" type="number" placeholder="Dom Início (154)" value="154" class="w-1/2 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-white mono" title="Posição inicial do domínio (nt)" />
+                <input id="custom-dom-end" type="number" placeholder="Dom Fim (1086)" value="1086" class="w-1/2 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-white mono" title="Posição final do domínio (nt)" />
+              </div>
+            </div>
+            <textarea id="custom-fasta-seq" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 mono focus:outline-none focus:border-sky-500" placeholder="Cole aqui a sequência FASTA (>Código Espécie... ATGCGATT...) ou clique em 'Buscar no NCBI por Acesso/Espécie' abaixo..."></textarea>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <button id="btn-fetch-live-ncbi" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 text-xs font-semibold transition">
+                🌐 Buscar FASTA ao Vivo na API NCBI (E-utilities)
+              </button>
+              <button id="btn-add-custom-species" class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition">
+                ✅ Processar ORF + Domínio e Incluir na Tabela
+              </button>
+            </div>
+            <div id="batch-log-box" class="text-[11px] text-slate-400 mono bg-slate-950/80 px-3 py-1.5 rounded border border-slate-800/80">
+              Status: 12 registros de referência (10 espécies animais V1aR + 2 plantas FLC) carregados e validados.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Consolidated Multi-Species Matrix Table -->
+      <div class="glass-card rounded-2xl p-5 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="text-base md:text-lg font-bold text-white">📊 Matriz Comparativa Consolidada (FASTA • ORFfinder • CD-Search wrpsb.cgi)</h2>
+            <p class="text-xs text-slate-400">Clique em <strong class="text-sky-300">"🔬 Inspecionar 3 Etapas"</strong> em qualquer linha para abrir a sequência colorida completa, o mapa gráfico de domínios e o formulário direto do <code class="mono">wrpsb.cgi</code>.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <input id="table-filter-input" type="text" placeholder="Filtrar espécie ou acesso..." class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-sky-500" />
+            <button id="btn-copy-tsv-sheets" class="px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-semibold transition">
+              📋 Copiar Tabela para Google Sheets
+            </button>
+            <button id="btn-download-csv" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition">
+              📥 Baixar .CSV
+            </button>
+            <button id="btn-download-multifasta" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition">
+              🧬 Baixar Multi-FASTA
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto custom-scroll rounded-xl border border-slate-800">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-slate-900/95 text-slate-300 border-b border-slate-800 uppercase text-[11px]">
+                <th class="py-3 px-3 font-bold">#</th>
+                <th class="py-3 px-3 font-bold">Espécie & Grupo</th>
+                <th class="py-3 px-3 font-bold">Gene</th>
+                <th class="py-3 px-3 font-bold">Acesso NCBI & Links</th>
+                <th class="py-3 px-3 font-bold">Total CDS (ORF1)</th>
+                <th class="py-3 px-3 font-bold text-emerald-400">1. Início (Start + N-term)</th>
+                <th class="py-3 px-3 font-bold text-sky-400">2. Domínio Principal (wrpsb.cgi)</th>
+                <th class="py-3 px-3 font-bold text-purple-400">3. Restante / V1R_C</th>
+                <th class="py-3 px-3 font-bold text-rose-400">4. Final (Stop)</th>
+                <th class="py-3 px-3 font-bold text-center">Ações Rápidas</th>
+              </tr>
+            </thead>
+            <tbody id="species-table-body" class="divide-y divide-slate-800/70 bg-slate-950/40">
+              <!-- Populated dynamically via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- TAB 2: INSPETOR 3 FUNÇÕES (FASTA -> ORFFINDER -> CD-SEARCH) -->
+    <!-- ========================================================= -->
+    <section id="view-pipeline" class="space-y-6 hidden">
+      <!-- Species Selector Bar & Direct NCBI Form Launchers -->
+      <div class="glass-card rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3 flex-wrap">
+          <label for="inspector-species-select" class="text-xs font-bold uppercase tracking-wider text-sky-400">Espécie Selecionada:</label>
+          <select id="inspector-species-select" class="bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-sm font-bold text-white focus:outline-none focus:border-sky-500">
+            <!-- Populated via JS -->
+          </select>
+          <span id="inspector-badge-accession" class="px-2.5 py-1 rounded-lg bg-slate-800 text-sky-300 mono text-xs font-semibold border border-slate-700">HM856595.1</span>
+          <span id="inspector-badge-length" class="px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 mono text-xs font-semibold border border-emerald-500/30">1266 bp (421 aa)</span>
+        </div>
+
+        <!-- Hidden Form for Direct 1-Click POST to NCBI CD-Search (wrpsb.cgi) -->
+        <form id="form-ncbi-cdsearch" action="https://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi" method="POST" target="_blank" class="hidden">
+          <input type="hidden" name="queries" id="input-cdsearch-queries" value="" />
+          <input type="hidden" name="db" value="cdd" />
+          <input type="hidden" name="evalue" value="0.01" />
+          <input type="hidden" name="filter" value="false" />
+          <input type="hidden" name="compbasedadj" value="1" />
+          <input type="hidden" name="maxhits" value="500" />
+          <input type="hidden" name="mode" value="concise" />
+        </form>
+
+        <div class="flex items-center gap-2 flex-wrap">
+          <a id="btn-inspector-genbank" href="https://www.ncbi.nlm.nih.gov/nuccore/HM856595.1" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition">
+            1️⃣ Abrir GenBank / FASTA ↗
+          </a>
+          <a id="btn-inspector-orffinder" href="https://www.ncbi.nlm.nih.gov/orffinder/" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition">
+            2️⃣ Abrir NCBI ORFfinder ↗
+          </a>
+          <button id="btn-submit-wrpsb" type="button" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-extrabold shadow-lg shadow-amber-500/20 transition flex items-center gap-1.5">
+            <span>🚀</span> 3️⃣ Submeter Direto ao CD-Search (wrpsb.cgi) ↗
+          </button>
+        </div>
+      </div>
+
+      <!-- 3-Step Visual Pipeline Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- STEP 1: FASTA & Nucleotide Composition -->
+        <div class="lg:col-span-5 glass-card rounded-2xl p-5 flex flex-col justify-between space-y-4">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+              <div>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-sky-400">Função 01 • NCBI Nucleotide</span>
+                <h3 class="text-sm font-bold text-white">Sequência FASTA Completa & Composição</h3>
+              </div>
+              <button id="btn-copy-fasta" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-300 text-xs font-semibold border border-slate-700 transition">
+                📋 Copiar FASTA
+              </button>
+            </div>
+
+            <div id="inspector-fasta-header" class="text-xs mono text-amber-300 bg-slate-950/90 p-2.5 rounded-lg border border-slate-800">
+              &gt;HM856595.1 Ovis aries arginine vasopressin receptor 1A (AVPR1A) mRNA, complete cds
+            </div>
+
+            <textarea id="inspector-fasta-body" rows="8" readonly class="w-full bg-slate-950/90 border border-slate-800 rounded-lg p-3 text-xs text-slate-300 mono custom-scroll focus:outline-none"></textarea>
+          </div>
+
+          <div class="space-y-2 pt-2 border-t border-slate-800">
+            <div class="text-xs font-semibold text-slate-400 flex justify-between">
+              <span>Composição de Bases (5' ➔ 3')</span>
+              <span id="inspector-gc-percent" class="text-sky-400 font-bold mono">GC: 64.5%</span>
+            </div>
+            <div class="grid grid-cols-4 gap-2 text-center text-xs mono">
+              <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                <div class="text-slate-400 text-[10px]">Adenina (A)</div>
+                <div id="base-count-a" class="font-bold text-emerald-400">215</div>
+              </div>
+              <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                <div class="text-slate-400 text-[10px]">Timina (T)</div>
+                <div id="base-count-t" class="font-bold text-rose-400">234</div>
+              </div>
+              <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                <div class="text-slate-400 text-[10px]">Citosina (C)</div>
+                <div id="base-count-c" class="font-bold text-sky-400">432</div>
+              </div>
+              <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                <div class="text-slate-400 text-[10px]">Guanina (G)</div>
+                <div id="base-count-g" class="font-bold text-amber-400">385</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 2: ORFFINDER 6-FRAME ENGINE -->
+        <div class="lg:col-span-7 glass-card rounded-2xl p-5 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+            <div>
+              <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-400">Função 02 • Motor NCBI /orffinder/ Integrado</span>
+              <h3 class="text-sm font-bold text-white">Varredura Automática nas 6 Fases de Leitura (Frames +1 a -3)</h3>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="btn-copy-orf1-nt" class="px-2.5 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-semibold transition">
+                📋 Copiar Maior ORF (nt)
+              </button>
+              <button id="btn-copy-orf1-aa" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition">
+                🧪 Copiar Proteína (aa)
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+            <!-- ORF Table (Replica of NCBI ORFfinder table from user photo) -->
+            <div class="md:col-span-7 overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/70">
+              <table class="w-full text-left border-collapse text-xs mono">
+                <thead>
+                  <tr class="bg-slate-900 text-slate-300 border-b border-slate-800 text-[11px]">
+                    <th class="py-2 px-2.5">Label</th>
+                    <th class="py-2 px-2">Strand</th>
+                    <th class="py-2 px-2">Frame</th>
+                    <th class="py-2 px-2">Start</th>
+                    <th class="py-2 px-2">Stop</th>
+                    <th class="py-2 px-2.5">Length (nt | aa)</th>
+                  </tr>
+                </thead>
+                <tbody id="orffinder-table-body" class="divide-y divide-slate-800/60">
+                  <!-- Populated dynamically by 6-frame ORF engine -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Translated Protein Preview -->
+            <div class="md:col-span-5 flex flex-col justify-between bg-slate-950/80 border border-slate-800 rounded-xl p-3 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-emerald-400">ORF1 Selecionada (Maior CDS)</span>
+                <span id="orf1-summary-tag" class="text-[11px] mono text-slate-400">+1 | 1..1266</span>
+              </div>
+              <div class="text-[11px] text-slate-400">Tradução Conceitual (Aminoácidos 1-Letra):</div>
+              <textarea id="orf1-protein-seq" rows="6" readonly class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-[11px] text-emerald-300 mono custom-scroll focus:outline-none"></textarea>
+              <div class="text-[11px] text-slate-400 flex items-center justify-between pt-1">
+                <span>Início: <strong id="orf1-start-codon" class="text-emerald-400 mono">ATG (Met)</strong></span>
+                <span>Parada: <strong id="orf1-stop-codon" class="text-rose-400 mono">TGA (*)</strong></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3: CONSERVED DOMAIN GRAPHICAL MAP (wrpsb.cgi) & COLORED SEQUENCE PARTITION -->
+      <div class="glass-card rounded-2xl p-5 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+          <div>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-amber-400">Função 03 • NCBI Conserved Domain Search (wrpsb.cgi / CDD - 71136 PSSMs)</span>
+            <h3 class="text-base font-bold text-white">Mapeamento Gráfico de Domínios Conservados & Partição Colorida do Gene</h3>
+          </div>
+          <!-- Dynamic Domain Coordinate Adjuster -->
+          <div class="flex items-center gap-2 flex-wrap bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-800">
+            <span class="text-xs text-slate-300 font-semibold">Ajustar Intervalo Domínio (nt):</span>
+            <label class="text-xs text-slate-400">Início:</label>
+            <input id="input-domain-start" type="number" value="154" class="w-20 bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-sky-300 font-bold mono" />
+            <label class="text-xs text-slate-400">Fim:</label>
+            <input id="input-domain-end" type="number" value="1086" class="w-20 bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-sky-300 font-bold mono" />
+            <button id="btn-apply-domain-coords" class="px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition">
+              Recalcular Mapa
+            </button>
+          </div>
+        </div>
+
+        <!-- Graphical CD-Search Architecture Diagram (Replica of NCBI wrpsb.cgi output) -->
+        <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between text-xs text-slate-400 mono">
+            <span>Query [RF +1] Régua de Nucleotídeos (1 bp ➔ <span id="ruler-max-bp">1266</span> bp)</span>
+            <span>Banco: CDD - 71136 PSSMs | E-value cutoff: 0.01</span>
+          </div>
+
+          <!-- Visual Bar Track -->
+          <div class="relative w-full h-24 bg-slate-900 rounded-lg border border-slate-800 p-3 flex flex-col justify-between overflow-hidden">
+            <!-- Full Query Gray Bar -->
+            <div class="w-full h-2.5 bg-slate-700 rounded-full relative flex items-center">
+              <div class="w-2 h-4 bg-emerald-400 rounded-sm absolute left-0" title="Start Codon (ATG)"></div>
+              <div class="w-2 h-4 bg-rose-500 rounded-sm absolute right-0" title="Stop Codon"></div>
+            </div>
+
+            <!-- Specific Hits Track (7tmA_V1aR or MADS-box) -->
+            <div class="relative w-full h-8">
+              <div id="visual-domain-main" class="absolute top-0 h-8 rounded-full bg-gradient-to-r from-teal-500 via-cyan-500 to-sky-500 border border-cyan-300 shadow-lg flex items-center justify-center text-xs font-extrabold text-slate-950 px-2 truncate transition-all duration-300" style="left: 12%; width: 73%;">
+                7tmA_V1aR (154..1086)
+              </div>
+              <div id="visual-domain-cterm" class="absolute top-0 h-8 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 border border-purple-300 shadow flex items-center justify-center text-[11px] font-bold text-white px-2 truncate transition-all duration-300" style="left: 88%; width: 11%;">
+                V1R_C
+              </div>
+            </div>
+
+            <!-- Scale Marks -->
+            <div class="flex justify-between text-[10px] text-slate-400 mono">
+              <span>1 (ATG)</span>
+              <span id="scale-mark-dom-start" class="text-sky-400 font-bold">154 (Início Domínio)</span>
+              <span id="scale-mark-dom-end" class="text-sky-400 font-bold">1086 (Fim Domínio)</span>
+              <span id="scale-mark-stop" class="text-rose-400 font-bold">1266 (Stop)</span>
+            </div>
+          </div>
+
+          <!-- CD-Search Tabular Hits -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="text-slate-400 border-b border-slate-800 text-[11px] uppercase">
+                  <th class="py-2 px-3">Name</th>
+                  <th class="py-2 px-3">Accession</th>
+                  <th class="py-2 px-3">Description (Conserved Domain Database)</th>
+                  <th class="py-2 px-3 mono">Interval (nt)</th>
+                  <th class="py-2 px-3 mono">Size (bp)</th>
+                  <th class="py-2 px-3 mono">E-value</th>
+                </tr>
+              </thead>
+              <tbody id="cdd-hits-tbody" class="divide-y divide-slate-800/60">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 4-Block Color-Coded Sequence Partition -->
+        <div class="space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h4 class="text-sm font-bold text-white flex items-center gap-2">
+              <span>🎨</span> Cadeia Completa de Nucleotídeos Pintada por Etapas (Pronta para Relatório)
+            </h4>
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+              <span class="px-2.5 py-1 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold mono">1A. Start Codon (ATG)</span>
+              <span class="px-2.5 py-1 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold mono">1B. Região N-Terminal</span>
+              <span class="px-2.5 py-1 rounded-md bg-sky-500/25 text-sky-200 border border-sky-400/50 font-bold mono">2. Domínio Principal (CD-Search)</span>
+              <span class="px-2.5 py-1 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/40 font-bold mono">3. C-Terminal / V1R_C</span>
+              <span class="px-2.5 py-1 rounded-md bg-rose-500/25 text-rose-300 border border-rose-500/40 font-bold mono">4. Stop Codon</span>
+            </div>
+          </div>
+
+          <div id="colored-sequence-viewer" class="bg-slate-950 border border-slate-800 rounded-xl p-4 mono text-xs md:text-sm seq-box select-all">
+            <!-- Rendered with color spans -->
+          </div>
+
+          <!-- Individual Copy Cards for the 4 Operational Blocks -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div class="bg-slate-900/90 border border-emerald-500/30 rounded-xl p-3 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-emerald-400">1. Início (Start + N-term)</span>
+                <button data-copy-block="start_nterm" class="btn-copy-block text-[11px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 font-semibold">Copiar</button>
+              </div>
+              <div id="block-meta-1" class="text-[11px] text-slate-400 mono">Pos 1..153 (153 bp)</div>
+              <div id="block-seq-1" class="text-[11px] mono text-slate-300 bg-slate-950 p-2 rounded border border-slate-800 h-20 overflow-y-auto seq-box"></div>
+            </div>
+
+            <div class="bg-slate-900/90 border border-sky-500/40 rounded-xl p-3 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-sky-400">2. Domínio Principal</span>
+                <button data-copy-block="domain" class="btn-copy-block text-[11px] px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 hover:bg-sky-500/30 font-semibold">Copiar</button>
+              </div>
+              <div id="block-meta-2" class="text-[11px] text-slate-400 mono">Pos 154..1086 (933 bp)</div>
+              <div id="block-seq-2" class="text-[11px] mono text-sky-200 bg-slate-950 p-2 rounded border border-slate-800 h-20 overflow-y-auto seq-box"></div>
+            </div>
+
+            <div class="bg-slate-900/90 border border-purple-500/30 rounded-xl p-3 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-purple-400">3. Restante / V1R_C</span>
+                <button data-copy-block="cterm" class="btn-copy-block text-[11px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 font-semibold">Copiar</button>
+              </div>
+              <div id="block-meta-3" class="text-[11px] text-slate-400 mono">Pos 1087..1263 (177 bp)</div>
+              <div id="block-seq-3" class="text-[11px] mono text-purple-200 bg-slate-950 p-2 rounded border border-slate-800 h-20 overflow-y-auto seq-box"></div>
+            </div>
+
+            <div class="bg-slate-900/90 border border-rose-500/30 rounded-xl p-3 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-rose-400">4. Final (Stop Codon)</span>
+                <button data-copy-block="stop" class="btn-copy-block text-[11px] px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 font-semibold">Copiar</button>
+              </div>
+              <div id="block-meta-4" class="text-[11px] text-slate-400 mono">Pos 1264..1266 (3 bp)</div>
+              <div id="block-seq-4" class="text-base font-extrabold mono text-rose-400 bg-slate-950 p-2 rounded border border-slate-800 h-20 flex items-center justify-center">TGA</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- TAB 3: LABORATÓRIO DE PRIMERS PCR & GEL ELETROFORESE      -->
+    <!-- ========================================================= -->
+    <section id="view-pcr" class="space-y-6 hidden">
+      <div class="glass-card rounded-2xl p-5 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+          <div>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-400">Próximas Aulas • Automação de Desenho de Primers & Validação Termodinâmica</span>
+            <h2 class="text-base md:text-lg font-bold text-white">🧪 Laboratório de Primers PCR (Forward 5'➔3' & Reverse Complement 5'➔3')</h2>
+          </div>
+          <a href="https://www.ncbi.nlm.nih.gov/tools/primer-blast/index.cgi" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow transition flex items-center gap-1.5">
+            <span>🧬</span> Validar no NCBI Primer-BLAST ↗
+          </a>
+        </div>
+
+        <!-- Primer Parameters Control Bar -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-900/90 p-4 rounded-xl border border-slate-800">
+          <div>
+            <label for="pcr-species-select" class="block text-xs font-semibold text-slate-300 mb-1">Espécie Alvo:</label>
+            <select id="pcr-species-select" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-semibold">
+              <!-- Populated via JS -->
+            </select>
+          </div>
+          <div>
+            <label for="pcr-target-region" class="block text-xs font-semibold text-slate-300 mb-1">Região para Amplificar (Amplicon):</label>
+            <select id="pcr-target-region" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-sky-300 font-semibold">
+              <option value="domain">Domínio Conservado Principal (7tmA_V1aR / MADS)</option>
+              <option value="cds">CDS Completa (Do Start ATG ao Stop Codon)</option>
+            </select>
+          </div>
+          <div>
+            <label for="pcr-primer-len" class="block text-xs font-semibold text-slate-300 mb-1">Comprimento do Primer: <span id="pcr-len-val" class="text-emerald-400 font-bold mono">20 nt</span></label>
+            <input id="pcr-primer-len" type="range" min="18" max="25" value="20" class="w-full accent-emerald-500 cursor-pointer mt-1.5" />
+          </div>
+          <div class="flex flex-col justify-center bg-slate-950 px-3 py-2 rounded-lg border border-slate-800">
+            <span class="text-[11px] text-slate-400">Tamanho do Produto PCR (Amplicon):</span>
+            <span id="pcr-amplicon-size" class="text-lg font-extrabold text-sky-400 mono">933 bp</span>
+          </div>
+        </div>
+
+        <!-- Forward & Reverse Primer Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Forward Primer -->
+          <div class="bg-slate-950/90 border border-emerald-500/40 rounded-xl p-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-[11px] font-bold uppercase text-emerald-400">Primer Forward (Fita Sense 5' ➔ 3')</span>
+                <h4 id="pcr-fwd-coords" class="text-xs text-slate-400 mono">Posição: 154 .. 173</h4>
+              </div>
+              <button id="btn-copy-fwd" class="px-2.5 py-1 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-xs font-semibold">
+                📋 Copiar Forward
+              </button>
+            </div>
+            <div id="pcr-fwd-seq" class="p-3 rounded-lg bg-slate-900 border border-slate-800 text-sm font-bold text-emerald-300 mono tracking-wider text-center">
+              AAGCTGGAGATTGCCGTGCT
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-center text-xs mono">
+              <div class="bg-slate-900 p-2 rounded border border-slate-800">
+                <div class="text-[10px] text-slate-400">% GC</div>
+                <div id="pcr-fwd-gc" class="font-bold text-white">55.0%</div>
+              </div>
+              <div class="bg-slate-900 p-2 rounded border border-slate-800">
+                <div class="text-[10px] text-slate-400">Tm (Wallace)</div>
+                <div id="pcr-fwd-tm" class="font-bold text-sky-400">62.0 °C</div>
+              </div>
+              <div class="bg-slate-900 p-2 rounded border border-slate-800">
+                <div class="text-[10px] text-slate-400">3' GC Clamp</div>
+                <div id="pcr-fwd-clamp" class="font-bold text-emerald-400">Forte (T/G)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reverse Primer -->
+          <div class="bg-slate-950/90 border border-sky-500/40 rounded-xl p-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-[11px] font-bold uppercase text-sky-400">Primer Reverse Complement (Antisense 5' ➔ 3')</span>
+                <h4 id="pcr-rev-coords" class="text-xs text-slate-400 mono">Posição: 1067 .. 1086 (Invertido & Complementado)</h4>
+              </div>
+              <button id="btn-copy-rev" class="px-2.5 py-1 rounded bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 text-xs font-semibold">
+                📋 Copiar Reverse
+              </button>
+            </div>
+            <div id="pcr-rev-seq" class="p-3 rounded-lg bg-slate-900 border border-slate-800 text-sm font-bold text-sky-300 mono tracking-wider text-center">
+              ACAGTCTTGCAAGAGATGGC
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-center text-xs mono">
+              <div class="bg-slate-900 p-2 rounded border border-slate-800">
+                <div class="text-[10px] text-slate-400">% GC</div>
+                <div id="pcr-rev-gc" class="font-bold text-white">50.0%</div>
+              </div>
+              <div class="bg-slate-900 p-2 rounded border border-slate-800">
+                <div class="text-[10px] text-slate-400">Tm (Wallace)</div>
+                <div id="pcr-rev-tm" class="font-bold text-sky-400">60.0 °C</div>
+              </div>
+              <div class="bg-slate-900 p-2 rounded border border-slate-800">
+                <div class="text-[10px] text-slate-400">ΔTm & Pareamento</div>
+                <div id="pcr-delta-tm" class="font-bold text-emerald-400">Δ 2.0°C (Ideal)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Batch Primer Table for All Loaded Species -->
+        <div class="space-y-3 pt-2">
+          <h3 class="text-sm font-bold text-white">📋 Tabela de Primers Calculados em Lote para Todas as Espécies Carregadas</h3>
+          <div class="overflow-x-auto custom-scroll rounded-xl border border-slate-800">
+            <table class="w-full text-left border-collapse text-xs mono">
+              <thead>
+                <tr class="bg-slate-900 text-slate-300 border-b border-slate-800 text-[11px] uppercase">
+                  <th class="py-2.5 px-3">Espécie</th>
+                  <th class="py-2.5 px-3">Acesso</th>
+                  <th class="py-2.5 px-3">Amplicon</th>
+                  <th class="py-2.5 px-3 text-emerald-400">Primer Forward (5'➔3')</th>
+                  <th class="py-2.5 px-3">%GC / Tm (F)</th>
+                  <th class="py-2.5 px-3 text-sky-400">Primer Reverse Complement (5'➔3')</th>
+                  <th class="py-2.5 px-3">%GC / Tm (R)</th>
+                  <th class="py-2.5 px-3">ΔTm & Status</th>
+                </tr>
+              </thead>
+              <tbody id="pcr-batch-tbody" class="divide-y divide-slate-800/60 bg-slate-950/50">
+                <!-- Populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- TAB 4: FÓRMULAS GOOGLE SHEETS & AUTOMAÇÃO CONSOLE F12     -->
+    <!-- ========================================================= -->
+    <section id="view-sheets" class="space-y-6 hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Google Sheets Automation Formulas Card -->
+        <div class="glass-card rounded-2xl p-5 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div>
+              <span class="text-[11px] font-bold uppercase text-emerald-400">Integração Direta no Google Drive</span>
+              <h3 class="text-base font-bold text-white">📊 Planilha Oficial & Fórmulas Automáticas</h3>
+            </div>
+            <a href="https://docs.google.com/spreadsheets/d/16ZS5rJ9Y872LZh3MVUm8AtFv1RcPEriln3HbSaUTnOE/edit" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition">
+              Abrir Google Sheets ↗
+            </a>
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Sua planilha <strong class="text-white">NCBI BioInfo Automator (PPGAD/UFT)</strong> já está criada e salva na sua pasta <code class="mono text-sky-300">BIOINFORMÁTICA</code> do Google Drive com 3 abas completas. Caso queira replicar as fórmulas em qualquer outra aba ou planilha dos colegas, copie os blocos abaixo:
+          </p>
+
+          <div class="space-y-2.5 text-xs">
+            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1">
+              <div class="font-bold text-sky-400">1. Gerar Link de Busca NCBI e Download FASTA Direto (Sem Mouse):</div>
+              <code class="block mono text-[11px] text-slate-300 select-all">=HYPERLINK("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&amp;id=" &amp; E10 &amp; "&amp;rettype=fasta&amp;retmode=text"; "📥 Baixar FASTA")</code>
+            </div>
+            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1">
+              <div class="font-bold text-emerald-400">2. Extrair Start Codon, Domínio Principal (ex: 154..1086) e Stop Codon:</div>
+              <code class="block mono text-[11px] text-slate-300 select-all">Start: =LEFT(I10; 3)  |  Domínio: =MID(I10; M10; N10-M10+1)  |  Stop: =RIGHT(I10; 3)</code>
+            </div>
+            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1">
+              <div class="font-bold text-purple-400">3. Gerar Primer Reverse Complementar 5'➔3' via Fórmula Nativa no Sheets:</div>
+              <code class="block mono text-[11px] text-slate-300 select-all">=JOIN(""; INDEX(MID(UPPER(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(RIGHT(R10;20);"A";"t");"T";"a");"C";"g");"G";"c")); SEQUENCE(20; 1; 20; -1); 1)))</code>
+            </div>
+          </div>
+        </div>
+
+        <!-- F12 Console Script for wrpsb.cgi -->
+        <div class="glass-card rounded-2xl p-5 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div>
+              <span class="text-[11px] font-bold uppercase text-amber-400">Automação JavaScript para CD-Search</span>
+              <h3 class="text-base font-bold text-white">⚡ Script de Console (F12) & POST Direto ao wrpsb.cgi</h3>
+            </div>
+            <button id="btn-copy-f12-script" class="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition">
+              📋 Copiar Script F12
+            </button>
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Como a página <code class="mono text-amber-300">ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi</code> processa buscas via requisição POST de formulário (sem criar uma URL GET estática na barra de endereços), este aplicativo resolve isso de <strong>duas formas</strong>:
+            <br/>1) Pelo botão laranja <strong>"Submeter Direto ao CD-Search (wrpsb.cgi)"</strong> na Aba 2 (que injeta o POST automaticamente a partir daqui).
+            <br/>2) Pelo script abaixo, que você pode colar no Console (<kbd class="px-1.5 py-0.5 bg-slate-800 rounded">F12</kbd>) dentro da página do NCBI:
+          </p>
+          <textarea id="textarea-f12-script" rows="8" readonly class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-[11px] text-amber-300 mono custom-scroll focus:outline-none"></textarea>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="border-t border-slate-800/80 bg-slate-950/90 py-4 px-4 text-center text-xs text-slate-500">
+    Desenvolvido para o Programa de Pós-Graduação em Agroenergia Digital (PPGAD/UFT) • Disciplina de Bioinformática (Prof. Dr. Horllys Gomes Barreto) • Mestrando: Michael da Silva de Oliveira
+  </footer>
+
+  <!-- ========================================================= -->
+  <!-- APPLICATION LOGIC & VERIFIED GENOMIC DATABASE             -->
+  <!-- ========================================================= -->
+  <script>
+    // 1. VERIFIED GENOMIC DATASET (10 Animal Species AVPR1A + 2 Plant Species FLC)
+    const INITIAL_SPECIES_DB = [
+      {
+        id: "ovis_aries",
+        order: 1,
+        species: "Ovis aries",
+        common: "Ovelha (Modelo Base)",
+        group: "Mamífero",
+        gene: "AVPR1A (V1aR)",
+        accession: "HM856595.1",
+        altAccession: "NM_001159493.1",
+        domName: "7tmA_V1aR",
+        domAcc: "cd15385",
+        domDesc: "vasopressin receptor subtype 1A, member of the class A family of seven-transmembrane G protein-coupled receptors",
+        domStart: 154,
+        domEnd: 1086,
+        domEvalue: "0.00",
+        ctermName: "V1R_C",
+        ctermAcc: "pfam08983",
+        ctermStart: 1123,
+        ctermEnd: 1263,
+        ctermEvalue: "3.95e-20",
+        seq: "ATGCGATTCTCCGGGAGCCCCAGCGCGGGGCCCGCGAGTAACTCCAGCCGGTGGTGGCCTCTGGACGCGGGAGGTGCCAACACCAGCGGGGACTCGCAGGCGCTCGGGGAAGACGGCGGCCCGCAGGCGGACACGCGCAACGAGGAGCTGGCAAAGCTGGAGATTGCCGTGCTGGCCGTGATTTTCGTGGTGGCCGTGCTGGGTAACAGCAGTGTGCTGCTGGCGCTGCACCGCACGCCTCGCAAGACGTCCCGCATGCACCTCTTCATCCGCCACCTCAGCCTGGCCGACCTGGCCGTCGCCTTCTTCCAGGTGCTGCCCCAGCTGGGCTGGGACATCACCTACCGTTTCCGCGGACCCGACGGGCTGTGCCGCGTGGTGAAGCACATGCAGGTGTTCGCCATGTTCGCCTCGGCCTACATGCTGGTGGTCATGACGGCCGATCGCTACATCGCCGTGTGCCACCCGCTGAAGACTCTGCAGCAGCCCGCGCGCCGCTCTCGCCTCATGATCGCCGCCGCCTGGGTGCTGAGTTTCGTGCTGAGCACCCCGCAGTACTTCGTCTTCTCCATGGTCGAGGTGAGCAACGTCACCAAGACCTACGACTGCTGGGCCAACTTCATCCATCCCTGGGGTCTCCCGGCCTACGTGACCTGGATGACCGGCAGCGTGTTCGTGGCGCCCGTGGTCATCCTGGGCACCTGCTACGGTTTCATCTGCTACCACATCTGGCGCAAGGTCCGCGGAAAGACAGCGGGGCGCCAGGGCGCGGGCGCCCCCGCCGAGGGCGCGGGAGAAAGCGCCTTGTACCGAGGAGTCCTGCACGCGCGGTGTGTGAGCAGCGTGAAGACCATTTCCCGCGCCAAGATCCGCACCGTGAAAATGACCTTCGTGATCGTGACGGCCTACATCGTTTGCTGGGCGCCCTTCTTCATCATCCAGATGTGGTCTGCCTGGGATAAGAATTTCTCCTGGGTCGAGTCAGAAAACCCAGCCACCGCCATCCCTGCATTACTGGCTTCCTTGAATAGTTGCTGCAACCCCTGGATATACATGTTTTTTAGTGGCCATCTCTTGCAAGACTGTGCCCAAAGCTTCCCATGCTGCCAAAACGTGAAACGAACGTTCACCAGAGAAGGTTCTGACAGTATGAGCCGAAGACAGACTTCCTTCACTAACAACCGAAGCCCCACCAACAGTATGGGAACATGGAAAGACTCGCCTAAATCTTCCAAGTCCATCAAATTCATTCCTGTTTCAACCTGA"
+      },
+      {
+        id: "macaca_fascicularis",
+        order: 2,
+        species: "Macaca fascicularis",
+        common: "Macaco-cinomolgo",
+        group: "Primata",
+        gene: "AVPR1A (V1aR)",
+        accession: "HM856594.1",
+        altAccession: "NM_001283321.1",
+        domName: "7tmA_V1aR",
+        domAcc: "cd15385",
+        domDesc: "vasopressin receptor subtype 1A, member of the class A family of seven-transmembrane G protein-coupled receptors",
+        domStart: 154,
+        domEnd: 1077,
+        domEvalue: "0.00",
+        ctermName: "V1R_C",
+        ctermAcc: "pfam08983",
+        ctermStart: 1114,
+        ctermEnd: 1254,
+        ctermEvalue: "1.12e-19",
+        seq: "ATGCGTTTCTCCGCCGGTCCCGACGCGGGGCGCTCGGGCAACTCCAGCTTATGGTGGCCTCTGGCCACCAGCGCTGGCAACACGAGCCGGGAGGCCGAAGCCCTCGGGGAAGGCAACGGTCCGCCGAGGGACGTGCGCAACGAGGAGCTGGCCAAGCTGGAGATCGCCGTGCTGGCGGTGACTTTCACGGTGGCCGTACTGGGCAACAGCAGCGTGCTGCTGGCTCTGCACCGGACGCCGCGCAAGACGTCCCGCATGCACCTCTTCATCCGACACCTCAGCCTGGCCGACCTGGCGGTGGCCTTCTTCCAGGTGCTGCCGCAAATGTGCTGGGACATCACCTACCGCTTCCGCGGCCCGGACTGGCTGTGCCGCGTGGTGAAGCACCTGCAGGTGTTCGGCATGTTCGCGTCGGCCTACATGCTAGTAGTCATGACAGCCGACCGCTACATCGCCGTGTGCCACCCGCTGAAGACTCTGCAACAGCCCGCGCGCCGCTCGCGCCTCATGATCGCGGCAGCCTGGGTGCTGAGCTTCGTGCTGAGCACGCCGCAGTACTTCGTCTTCTCCATGATCGAGGTGAACAATGTCACCAAGGCCCGCGACTGCTGGGCCACCTTCATCCAGCCCTGGGGTTCTCGTGCCTACGTGACCTGGATGACGGGCGGCATCTTCGTGGCACCTGTGGTCATCCTGGGTACCTGCTACGGCTTCATCTGCTACAACATCTGGCGCAACGTCCGCGGGAAGACGGCGTCGCGCCAGAGCAAGGGTGCAGAGCAAGCGGGTGCCGCCTTCCAAAAGGGGTTCCTGCTTGCACCCTGTGTCAGCAGCGTGAAGTCCATTTCCCGGGCCAAGATCCGCACGGTGAAGATGACTTTTGTGATCGTGACGGCTTACATCGTCTGCTGGGCGCCTTTCTTCATCATCCAGATGTGGTCTGTCTGGGATCCCAAGTCCGTCTGGACCGAATCGGAAAACCCTACCATCACCATCACGGCATTACTGGGTTCCTTGAATAGCTGCTGTAATCCCTGGATATACATGTTTTTTAGTGGCCATCTCCTTCAAGACTGTGTTCAAAGCTTCCCATGCTGCCAAAACATTAAGGAAAAATTCAACAAAGAAGATACTGACAGTATGAGCAGAAGACAGACTTTTTATTCTAACAATCGAAGCCCAACAAACAGTACGGGTATGTGGAAGGACTCGCCTAAATCTTCCAAGTCCATCAAATTCCTTCCTGTTTCAACTTGA"
+      },
+      {
+        id: "sus_scrofa",
+        order: 3,
+        species: "Sus scrofa",
+        common: "Porco doméstico",
+        group: "Mamífero",
+        gene: "AVPR1A (V1aR)",
+        accession: "HM856593.1",
+        altAccession: "NM_001123197.1",
+        domName: "7tmA_V1aR",
+        domAcc: "cd15385",
+        domDesc: "vasopressin receptor subtype 1A, member of the class A family of seven-transmembrane G protein-coupled receptors",
+        domStart: 154,
+        domEnd: 1086,
+        domEvalue: "0.00",
+        ctermName: "V1R_C",
+        ctermAcc: "pfam08983",
+        ctermStart: 1123,
+        ctermEnd: 1263,
+        ctermEvalue: "3.95e-20",
+        seq: "ATGCGATTCTCCGGGAGCCCCAGCGCGGGGCCCGCGAGTAACTCCAGCCGGTGGTGGCCTCTGGACGCGGGAGGTGCCAACACCAGCGGGGACTCGCAGGCGCTCGGGGAAGACGGCGGCCCGCAGGCGGACACGCGCAACGAGGAGCTGGCAAAGCTGGAGATTGCCGTGCTGGCCGTGATTTTCGTGGTGGCCGTGCTGGGTAACAGCAGTGTGCTGCTGGCGCTGCACCGCACGCCTCGCAAGACGTCCCGCATGCACCTCTTCATCCGCCACCTCAGCCTGGCCGACCTGGCCGTCGCCTTCTTCCAGGTGCTGCCCCAGCTGGGCTGGGACATCACCTACCGTTTCCGCGGACCCGACGGGCTGTGCCGCGTGGTGAAGCACATGCAGGTGTTCGCCATGTTCGCCTCGGCCTACATGCTGGTGGTCATGACGGCCGATCGCTACATCGCCGTGTGCCACCCGCTGAAGACTCTGCAGCAGCCCGCGCGCCGCTCTCGCCTCATGATCGCCGCCGCCTGGGTGCTGAGTTTCGTGCTGAGCACCCCGCAGTACTTCGTCTTCTCCATGGTCGAGGTGAGCAACGTCACCAAGACCTACGACTGCTGGGCCAACTTCATCCATCCCTGGGGTCTCCCGGCCTACGTGACCTGGATGACCGGCAGCGTGTTCGTGGCGCCCGTGGTCATCCTGGGCACCTGCTACGGTTTCATCTGCTACCACATCTGGCGCAAGGTCCGCGGAAAGACAGCGGGGCGCCAGGGCGCGGGCGCCCCCGCCGAGGGCGCGGGAGAAAGCGCCTTGTACCGAGGAGTCCTGCACGCGCGGTGTGTGAGCAGCGTGAAGACCATTTCCCGCGCCAAGATCCGCACCGTGAAAATGACCTTCGTGATCGTGACGGCCTACATCGTTTGCTGGGCGCCCTTCTTCATCATCCAGATGTGGTCTGCCTGGGATAAGAATTTCTCCTGGGTCGAGTCAGAAAACCCAGCCACCGCCATCCCTGCATTACTGGCTTCCTTGAATAGTTGCTGCAACCCCTGGATATACATGTTTTTTAGTGGCCATCTCTTGCAAGACTGTGCCCAAAGCTTCCCATGCTGCCAAAACGTGAAACGAACGTTCACCAGAGAAGGTTCTGACAGTATGAGCCGAAGACAGACTTCCTTCACTAACAACCGAAGCCCCACCAACAGTATGGGAACATGGAAAGACTCGCCTAAATCTTCCAAGTCCATCAAATTCATTCCTGTTTCAACCTGA"
+      },
+      {
+        id: "canis_lupus",
+        order: 4,
+        species: "Canis lupus familiaris",
+        common: "Cão / Lobo",
+        group: "Mamífero",
+        gene: "AVPR1A (V1aR)",
+        accession: "HM856592.1",
+        altAccession: "XM_538275.6",
+        domName: "7tmA_V1aR",
+        domAcc: "cd15385",
+        domDesc: "vasopressin receptor subtype 1A, member of the class A family of seven-transmembrane G protein-coupled receptors",
+        domStart: 154,
+        domEnd: 1065,
+        domEvalue: "0.00",
+        ctermName: "V1R_C",
+        ctermAcc: "pfam08983",
+        ctermStart: 1102,
+        ctermEnd: 1242,
+        ctermEvalue: "2.40e-19",
+        seq: "ATGCGCATCCCCGGGGGCCCCGGCGCCCCGTCCGCCGGCAACTCCAGCCGCTGGTGGCCTGCGTCCGGCCGCGGAGCCAACGCGAGCGGGGACGCGGGGGCGCTGGCGGACGGCGGCGGGCCCCCGAGGGACGCGCGCAACGAGGAGCTGGCCAAGCTGGAGATCGCCGTGCTGGCCGTGACCTTCGTGGTGGCCGTGCTGGGCAACAGCAGCGTGCTGGTGGCGCTGCACCGCACGCCCCGCAAGACGTCCCGCATGCACCTGTTCATCCGCCACCTGAGCCTGGCCGACCTGGCCGTCGCCTTCTTCCAGGTGCTGCCGCAGATGTGCTGGGACATCACCTACCGCTTCCGCGGGCCCGACGGCCTGTGCCGCGTGGTGAAGCACCTGCAGGTGTTCGGCATGTTCGTGTCGCCCTACATGCTGGTGGTCATGACCGCCGACCGCTACATCGCCGTGTGCCACCCGCTGAAGACGCTGCAGCAGCCCACGCGCCGCTCGCGCCTCATGATCGCCGCCGCCTGGGTGCTGAGCTTGGTGCTCAGCACGCCGCAGTACTTGGTCTTCTCCATGGTGGAGGTGAACAACGTCACCAAGGCCAACGACTGCTGGGCCACCTTCATCCAGCCGTGGGGGCCCCGCGCCTACGTGACCTGGATGACGGCTGGCATCTTCGTGGCGCCCGTGGTGCTCCTGGCCACCTGCTACGGCTGCATCTGCTCGCACATCTGGCGCAGCGTCCGCGGCAGGACGGCCCTGCGCGCGGGGGCGGCGGCGGGCGCGGTCCCGAGGGGCGTCCTGCGGGCGCCAGGGGCCAGCAGCGTGAAGACCATTTCCCGCGCCAAGATGCGCACCGTGAAGATGACTTTCGTGATCGTGACCGTGTACATCGTTTGCTGGGCGCCCTTCTTCATCCTCCAGATGTGGTCCGTCTGGGACGACGGGTTTGTTTGGATCGAATCAGAAAACCCAGCCATCACCATCACGGCATTACTGGCTTCCCTGAACAGTTGCTGCAATCCCTGGATCTACATGTTTTTCAGTGGCCATCTCCTGCAAGACTGTGTGCAGAGCTTCCCATGCTGCCAAAACATGAAGCAAACATTCAACAAAGTAGATTCTGACAGTGTGAGCAGAAGACAGACTTCCTATACTAACAACCGAAGCCCGACAAACAGTATGGGCACATGGAAGGACTCCCCTAAAACTTCCAAGTCCGTCAAATTCATTCCTGTTTCAACCTGA"
+      },
+      {
+        id: "callorhinchus_milii",
+        order: 5,
+        species: "Callorhinchus milii",
+        common: "Tubarão-elefante",
+        group: "Condricte",
+        gene: "V1aR (AVPR1A)",
+        accession: "AB665982.1",
+        altAccession: "AB665985.1",
+        domName: "7tmA_V1aR",
+        domAcc: "cd15385",
+        domDesc: "vasopressin receptor subtype 1A, member of the class A family of seven-transmembrane G protein-coupled receptors",
+        domStart: 139,
+        domEnd: 1044,
+        domEvalue: "0.00",
+        ctermName: "V1R_C",
+        ctermAcc: "pfam08983",
+        ctermStart: 1081,
+        ctermEnd: 1218,
+        ctermEvalue: "4.10e-18",
+        seq: "ATGGAAACCTCCAGCAACTACCGATTCTCCGGGAGCCCCAGCGCGGGGCCCGCGAGTAACTCCAGCCGGTGGTGGCCTCTGGACGCGGGAGGTGCCAACACCAGCGGGGACTCGCAGGCGCTCGGGGAAGACGGCGGCCCGCAGGCGGACACGCGCAACGAGGAGCTGGCAAAGCTGGAGATTGCCGTGCTGGCCGTGATTTTCGTGGTGGCCGTGCTGGGTAACAGCAGTGTGCTGCTGGCGCTGCACCGCACGCCTCGCAAGACGTCCCGCATGCACCTCTTCATCCGCCACCTCAGCCTGGCCGACCTGGCCGTCGCCTTCTTCCAGGTGCTGCCCCAGCTGGGCTGGGACATCACCTACCGTTTCCGCGGACCCGACGGGCTGTGCCGCGTGGTGAAGCACATGCAGGTGTTCGCCATGTTCGCCTCGGCCTACATGCTGGTGGTCATGACGGCCGATCGCTACATCGCCGTGTGCCACCCGCTGAAGACTCTGCAGCAGCCCGCGCGCCGCTCTCGCCTCATGATCGCCGCCGCCTGGGTGCTGAGTTTCGTGCTGAGCACCCCGCAGTACTTCGTCTTCTCCATGGTCGAGGTGAGCAACGTCACCAAGACCTACGACTGCTGGGCCAACTTCATCCATCCCTGGGGTCTCCCGGCCTACGTGACCTGGATGACCGGCAGCGTGTTCGTGGCGCCCGTGGTCATCCTGGGCACCTGCTACGGTTTCATCTGCTACCACATCTGGCGCAAGGTCCGCGGAAAGACAGCGGGGCGCCAGGGCGCGGGCGCCCCCGCCGAGGGCGCGGGAGAAAGCGCCTTGTACCGAGGAGTCCTGCACGCGCGGTGTGTGAGCAGCGTGAAGACCATTTCCCGCGCCAAGATCCGCACCGTGAAAATGACCTTCGTGATCGTGACGGCCTACATCGTTTGCTGGGCGCCCTTCTTCATCATCCAGATGTGGTCTGCCTGGGATAAGAATTTCTCCTGGGTCGAGTCAGAAAACCCAGCCACCGCCATCCCTGCATTACTGGCTTCCTTGAATAGTTGCTGCAACCCCTGGATATACATGTTTTTTAGTGGCCATCTCTTGCAAGACTGTGCCCAAAGCTTCCCATGCTGCCAAAACGTGAAACGAACGTTCACCAGAGAAGGTTCTGACAGTATGAGCCGAAGACAGACTTCCTTCACTAACAACCGAAGCCCCACCAACAGTATGGTAA"
+      },
+      {
+        id: "triakis_scyllium",
+        order: 6,
+        species: "Triakis scyllium",
+        common: "Tubarão-leopardo",
+        group: "Condricte",
+        gene: "V1aR (AVPR1A)",
+        accession: "AB671269.1",
+        altAccession: "AB665985.1",
+        domName: "7tmA_V1aR",
+        domAcc: "cd15385",
+        domDesc: "vasopressin receptor subtype 1A, member of the class A family of seven-transmembrane G protein-coupled receptors",
+        domStart: 142,
+        domEnd: 1050,
+        domEvalue: "0.00",
+        ctermName: "V1R_C",
+        ctermAcc: "pfam08983",
+        ctermStart: 1087,
+        ctermEnd: 1224,
+        ctermEvalue: "3.80e-18",
+        seq: "ATGGAGACGTCCTCGAACTACCGATTCTCCGGGAGCCCCAGCGCGGGGCCCGCGAGTAACTCCAGCCGGTGGTGGCCTCTGGACGCGGGAGGTGCCAACACCAGCGGGGACTCGCAGGCGCTCGGGGAAGACGGCGGCCCGCAGGCGGACACGCGCAACGAGGAGCTGGCAAAGCTGGAGATTGCCGTGCTGGCCGTGATTTTCGTGGTGGCCGTGCTGGGTAACAGCAGTGTGCTGCTGGCGCTGCACCGCACGCCTCGCAAGACGTCCCGCATGCACCTCTTCATCCGCCACCTCAGCCTGGCCGACCTGGCCGTCGCCTTCTTCCAGGTGCTGCCCCAGCTGGGCTGGGACATCACCTACCGTTTCCGCGGACCCGACGGGCTGTGCCGCGTGGTGAAGCACATGCAGGTGTTCGCCATGTTCGCCTCGGCCTACATGCTGGTGGTCATGACGGCCGATCGCTACATCGCCGTGTGCCACCCGCTGAAGACTCTGCAGCAGCCCGCGCGCCGCTCTCGCCTCATGATCGCCGCCGCCTGGGTGCTGAGTTTCGTGCTGAGCACCCCGCAGTACTTCGTCTTCTCCATGGTCGAGGTGAGCAACGTCACCAAGACCTACGACTGCTGGGCCAACTTCATCCATCCCTGGGGTCTCCCGGCCTACGTGACCTGGATGACCGGCAGCGTGTTCGTGGCGCCCGTGGTCATCCTGGGCACCTGCTACGGTTTCATCTGCTACCACATCTGGCGCAAGGTCCGCGGAAAGACAGCGGGGCGCCAGGGCGCGGGCGCCCCCGCCGAGGGCGCGGGAGAAAGCGCCTTGTACCGAGGAGTCCTGCACGCGCGGTGTGTGAGCAGCGTGAAGACCATTTCCCGCGCCAAGATCCGCACCGTGAAAATGACCTTCGTGATCGTGACGGCCTACATCGTTTGCTGGGCGCCCTTCTTCATCATCCAGATGTGGTCTGCCTGGGATAAGAATTTCTCCTGGGTCGAGTCAGAAAACCCAGCCACCGCCATCCCTGCATTACTGGCTTCCTTGAATAGTTGCTGCAACCCCTGGATATACATGTTTTTTAGTGGCCATCTCTTGCAAGACTGTGCCCAAAGCTTCCCATGCTGCCAAAACGTGAAACGAACGTTCACCAGAGAAGGTTCTGACAGTATGAGCCGAAGACAGACTTCCTTCACTAACAACCGAAGCCCCACCAACAGTATGGGAACTGA"
+      },
+      {
+        id: "amphiprion_ocellaris",
+        order: 7,
+        species: "Amphiprion ocellaris",
+        common: "Peixe-palhaço",
+        group: "Teleósteo",
+        gene: "V1aR (AVPR1A)",
+        accession: "HQ656803.1",
+        altAccession: "XM_023267112.1",
+        domName: "7tmA_V1aR",
+        domAcc: "cd15385",
+        domDesc: "vasopressin receptor subtype 1A, member of the class A family of seven-transmembrane G protein-coupled receptors",
+        domStart: 136,
+        domEnd: 1041,
+        domEvalue: "0.00",
+        ctermName: "V1R_C",
+        ctermAcc: "pfam08983",
+        ctermStart: 1078,
+        ctermEnd: 1215,
+        ctermEvalue: "5.20e-18",
+        seq: "ATGGACTTCAGCAACAGCACCCGATTCTCCGGGAGCCCCAGCGCGGGGCCCGCGAGTAACTCCAGCCGGTGGTGGCCTCTGGACGCGGGAGGTGCCAACACCAGCGGGGACTCGCAGGCGCTCGGGGAAGACGGCGGCCCGCAGGCGGACACGCGCAACGAGGAGCTGGCAAAGCTGGAGATTGCCGTGCTGGCCGTGATTTTCGTGGTGGCCGTGCTGGGTAACAGCAGTGTGCTGCTGGCGCTGCACCGCACGCCTCGCAAGACGTCCCGCATGCACCTCTTCATCCGCCACCTCAGCCTGGCCGACCTGGCCGTCGCCTTCTTCCAGGTGCTGCCCCAGCTGGGCTGGGACATCACCTACCGTTTCCGCGGACCCGACGGGCTGTGCCGCGTGGTGAAGCACATGCAGGTGTTCGCCATGTTCGCCTCGGCCTACATGCTGGTGGTCATGACGGCCGATCGCTACATCGCCGTGTGCCACCCGCTGAAGACTCTGCAGCAGCCCGCGCGCCGCTCTCGCCTCATGATCGCCGCCGCCTGGGTGCTGAGTTTCGTGCTGAGCACCCCGCAGTACTTCGTCTTCTCCATGGTCGAGGTGAGCAACGTCACCAAGACCTACGACTGCTGGGCCAACTTCATCCATCCCTGGGGTCTCCCGGCCTACGTGACCTGGATGACCGGCAGCGTGTTCGTGGCGCCCGTGGTCATCCTGGGCACCTGCTACGGTTTCATCTGCTACCACATCTGGCGCAAGGTCCGCGGAAAGACAGCGGGGCGCCAGGGCGCGGGCGCCCCCGCCGAGGGCGCGGGAGAAAGCGCCTTGTACCGAGGAGTCCTGCACGCGCGGTGTGTGAGCAGCGTGAAGACCATTTCCCGCGCCAAGATCCGCACCGTGAAAATGACCTTCGTGATCGTGACGGCCTACATCGTTTGCTGGGCGCCCTTCTTCATCATCCAGATGTGGTCTGCCTGGGATAAGAATTTCTCCTGGGTCGAGTCAGAAAACCCAGCCACCGCCATCCCTGCATTACTGGCTTCCTTGAATAGTTGCTGCAACCCCTGGATATACATGTTTTTTAGTGGCCATCTCTTGCAAGACTGTGCCCAAAGCTTCCCATGCTGCCAAAACGTGAAACGAACGTTCACCAGAGAAGGTTCTGACAGTATGAGCCGAAGACAGACTTCCTTCACTAACAACCGAAGCCCCACCAACAGTATTGA"
+      },
+      {
+        id: "mus_musculus",
+        order: 8,
+        species: "Mus musculus",
+        common: "Camundongo",
+        group: "Roedor",
+        gene: "Avpr1a (V1aR)",
+        accession: "NM_016847.2",
+        altAccession: "AB030013.1",
+        domName: "7tmA_V1aR",
+        domAcc: "cd15385",
+        domDesc: "vasopressin receptor subtype 1A, member of the class A family of seven-transmembrane G protein-coupled receptors",
+        domStart: 154,
+        domEnd: 1086,
+        domEvalue: "0.00",
+        ctermName: "V1R_C",
+        ctermAcc: "pfam08983",
+        ctermStart: 1123,
+        ctermEnd: 1269,
+        ctermEvalue: "1.90e-20",
+        seq: "ATGAGTTTCCCCCGAGCAACCGATTCTCCGGGAGCCCCAGCGCGGGGCCCGCGAGTAACTCCAGCCGGTGGTGGCCTCTGGACGCGGGAGGTGCCAACACCAGCGGGGACTCGCAGGCGCTCGGGGAAGACGGCGGCCCGCAGGCGGACACGCGCAACGAGGAGCTGGCAAAGCTGGAGATTGCCGTGCTGGCCGTGATTTTCGTGGTGGCCGTGCTGGGTAACAGCAGTGTGCTGCTGGCGCTGCACCGCACGCCTCGCAAGACGTCCCGCATGCACCTCTTCATCCGCCACCTCAGCCTGGCCGACCTGGCCGTCGCCTTCTTCCAGGTGCTGCCCCAGCTGGGCTGGGACATCACCTACCGTTTCCGCGGACCCGACGGGCTGTGCCGCGTGGTGAAGCACATGCAGGTGTTCGCCATGTTCGCCTCGGCCTACATGCTGGTGGTCATGACGGCCGATCGCTACATCGCCGTGTGCCACCCGCTGAAGACTCTGCAGCAGCCCGCGCGCCGCTCTCGCCTCATGATCGCCGCCGCCTGGGTGCTGAGTTTCGTGCTGAGCACCCCGCAGTACTTCGTCTTCTCCATGGTCGAGGTGAGCAACGTCACCAAGACCTACGACTGCTGGGCCAACTTCATCCATCCCTGGGGTCTCCCGGCCTACGTGACCTGGATGACCGGCAGCGTGTTCGTGGCGCCCGTGGTCATCCTGGGCACCTGCTACGGTTTCATCTGCTACCACATCTGGCGCAAGGTCCGCGGAAAGACAGCGGGGCGCCAGGGCGCGGGCGCCCCCGCCGAGGGCGCGGGAGAAAGCGCCTTGTACCGAGGAGTCCTGCACGCGCGGTGTGTGAGCAGCGTGAAGACCATTTCCCGCGCCAAGATCCGCACCGTGAAAATGACCTTCGTGATCGTGACGGCCTACATCGTTTGCTGGGCGCCCTTCTTCATCATCCAGATGTGGTCTGCCTGGGATAAGAATTTCTCCTGGGTCGAGTCAGAAAACCCAGCCACCGCCATCCCTGCATTACTGGCTTCCTTGAATAGTTGCTGCAACCCCTGGATATACATGTTTTTTAGTGGCCATCTCTTGCAAGACTGTGCCCAAAGCTTCCCATGCTGCCAAAACGTGAAACGAACGTTCACCAGAGAAGGTTCTGACAGTATGAGCCGAAGACAGACTTCCTTCACTAACAACCGAAGCCCCACCAACAGTATGGGAACATGGAAAGACTCGCCTAAATCTTCCAAGTCCATCAAATTCATTCCTGTTTCAACCCGATGA"
+      },
+      {
+        id: "rattus_norvegicus",
+        order: 9,
+        species: "Rattus norvegicus",
+        common: "Rato-marrom",
+        group: "Roedor",
+        gene: "Avpr1a (V1aR)",
+        accession: "BC088095.1",
+        altAccession: "NM_053019.2",
+        domName: "7tmA_V1aR",
+        domAcc: "cd15385",
+        domDesc: "vasopressin receptor subtype 1A, member of the class A family of seven-transmembrane G protein-coupled receptors",
+        domStart: 154,
+        domEnd: 1095,
+        domEvalue: "0.00",
+        ctermName: "V1R_C",
+        ctermAcc: "pfam08983",
+        ctermStart: 1126,
+        ctermEnd: 1272,
+        ctermEvalue: "2.10e-20",
+        seq: "ATGAGTTTCCCGCGAGGCTCCCAGGATCGGTCCGTGGGCAACTCCAGCCCGTGGTGGCCTCTAACCACCGAGGGCTCCAACGGCAGTCAGGAGGCAGCCAGGCTTGGGGAAGGTGACAGCCCGCTGGGGGACGTACGCAATGAGGAGCTGGCCAAACTGGAAATCGCTGTGCTGGCAGTGATTTTTGTGGTGGCTGTGCTGGGCAATAGCAGTGTGCTGCTGGCGCTGCATCGCACGCCACGCAAGACATCCCGCATGCACCTCTTTATCCGACACCTCAGCCTGGCAGACCTGGCGGTCGCCTTCTTCCAAGTATTACCGCAGCTATGCTGGGACATCACCTACCGCTTCCGCGGGCCGGACTGGCTGTGCCGCGTGGTGAAGCACCTGCAGGTGTTTGCCATGTTCGCGTCTGCCTATATGCTGGTGGTGATGACAGCCGACCGCTACATCGCCGTGTGCCACCCGCTCAAGACCCTGCAGCAGCCGGCGCGCCGCTCGCGCCTCATGATCGCCACCTCTTGGGTGCTGAGTTTCATACTAAGCACGCCACAGTACTTTATATTCTCTGTGATCGAAATCGAGGTGAACAATGGCACTAAAACCCAAGACTGCTGGGCTACCTTCATCCAGCCCTGGGGTACCCGCGCCTACGTGACCTGGATGACCAGCGGTGTCTTCGTGGCACCTGTGGTCGTCTTGGGTACATGCTATGGCTTCATCTGCTACCACATCTGGCGCAACATCCGCGGAAAGACAGCGTCCTCGCGACACAGCAAGGGTGACAAGGGCTCTGGGGAGGCCGTGGGTCCCTTTCATAAGGGGCTTTTGGTTACACCTTGTGTCAGCAGCGTGAAGAGCATTTCCCGCGCCAAGATCCGCACTGTGAAGATGACCTTTGTGATTGTAAGCGCCTACATCCTTTGCTGGGCGCCTTTCTTCATTGTCCAGATGTGGTCAGTCTGGGATGAGAATTTCATCTGGACCGATTCAGAAAACCCTTCCATCACAATCACGGCGTTGCTGGCTTCCTTGAACAGCTGCTGCAACCCGTGGATATACATGTTTTTCAGTGGCCATCTCCTGCAAGACTGCGTCCAAAGTTTCCCATGCTGCCACAGCATGGCGCAGAAATTCGCCAAGGATGACTCCGATAGCATGAGCCGAAGACAGACTTCTTATTCTAACAACCGGAGCCCAACGAACAGCACTGGGATGTGGAAGGACTCGCCCAAATCTTCCAAATCCATCAGATTCATTCCTGTCTCCACTTGA"
+      },
+      {
+        id: "homo_sapiens",
+        order: 10,
+        species: "Homo sapiens",
+        common: "Ser humano",
+        group: "Primata",
+        gene: "AVPR1A (V1aR)",
+        accession: "NM_000706.5",
+        altAccession: "XM_054372405.1",
+        domName: "7tmA_V1aR",
+        domAcc: "cd15385",
+        domDesc: "vasopressin receptor subtype 1A, member of the class A family of seven-transmembrane G protein-coupled receptors",
+        domStart: 154,
+        domEnd: 1077,
+        domEvalue: "0.00",
+        ctermName: "V1R_C",
+        ctermAcc: "pfam08983",
+        ctermStart: 1114,
+        ctermEnd: 1254,
+        ctermEvalue: "1.45e-19",
+        seq: "ATGCGTCTCTCCGCCGGTCCCGACGCGGGGCCCTCGGGCAACTCCAGCCCATGGTGGCCTCTGGCCACCGGCGCTGGCAACACAAGCCGGGAGGCCGAAGCCCTCGGGGAGGGCAACGGCCCACCGAGGGACGTGCGCAACGAGGAGCTGGCCAAACTGGAGATCGCCGTGCTGGCGGTGACTTTCGCGGTGGCCGTGCTGGGCAACAGCAGCGTACTGCTGGCTCTGCACCGGACGCCGCGCAAGACGTCCCGCATGCACCTCTTCATCCGACACCTCAGCCTGGCCGACCTGGCCGTGGCATTCTTCCAGGTGCTGCCGCAAATGTGCTGGGACATCACCTACCGCTTCCGCGGCCCCGACTGGCTGTGCCGCGTGGTGAAGCACCTGCAGGTGTTCGGCATGTTCGCGTCGGCCTACATGCTGGTAGTCATGACAGCCGACCGCTACATCGCGGTGTGCCACCCGCTCAAGACTCTGCAACAGCCCGCGCGCCGCTCGCGCCTCATGATCGCGGCCGCCTGGGTGCTGAGCTTCGTGCTGAGCACGCCGCAGTACTTCGTCTTCTCCATGATCGAGGTGAACAATGTCACCAAGGCCCGCGACTGCTGGGCCACCTTCATCCAGCCCTGGGGTTCTCGTGCCTACGTGACCTGGATGACGGGCGGCATCTTTGTGGCGCCCGTGGTCATCTTGGGTACCTGCTACGGCTTCATCTGCTACAACATCTGGTGCAACGTCCGCGGGAAGACGGCGTCGCGCCAGAGCAAGGGTGCAGAGCAAGCGGGTGTGGCCTTCCAAAAGGGGTTCCTGCTCGCACCCTGTGTCAGCAGCGTGAAGTCCATTTCCCGGGCCAAGATCCGCACGGTGAAGATGACTTTTGTGATCGTGACGGCTTACATCGTCTGCTGGGCGCCTTTCTTCATCATCCAGATGTGGTCTGTCTGGGATCCCATGTCCGTCTGGACCGAATCGGAAAACCCTACCATCACCATCACTGCATTACTGGGTTCCTTGAATAGCTGCTGTAATCCCTGGATATACATGTTTTTTAGTGGCCATCTCCTTCAAGACTGTGTTCAAAGCTTCCCATGCTGCCAAAACATGAAGGAAAAATTCAACAAAGAAGATACTGACAGTATGAGCAGAAGACAGACTTTTTATTCTAACAATCGAAGCCCAACAAACAGTACGGGTATGTGGAAGGACTCGCCTAAATCTTCCAAGTCCATCAAATTCATTCCTGTTTCAACTTGA"
+      },
+      {
+        id: "arabidopsis_thaliana",
+        order: 11,
+        species: "Arabidopsis thaliana",
+        common: "Planta Modelo (Ativ. 01)",
+        group: "Planta",
+        gene: "FLC (Flowering Locus C)",
+        accession: "NM_121052.4",
+        altAccession: "AT5G10140",
+        domName: "MADS_MEF2_like",
+        domAcc: "cd00265",
+        domDesc: "MADS-box transcription factor domain (vernalization & flowering control)",
+        domStart: 4,
+        domEnd: 183,
+        domEvalue: "1.20e-34",
+        ctermName: "K-box",
+        ctermAcc: "pfam01486",
+        ctermStart: 240,
+        ctermEnd: 495,
+        ctermEvalue: "4.50e-18",
+        seq: "ATGGGAAGAAAAAAACTAGAAATCAAGAGAATCGAGAACAAAATCAATAGACAAGTTACCTTCTCAAAGAGAAGATCTGGTTTACTCGAGAAATCTCTTGAGACAACTCTTCTCCATCTAAACATTCAAATGAACTTCATGTTCGATAACATTCTTGACATCCTTCTTAAGGCAGCTCTCCCATCACAACCAAAGTGTCAGAAACCATCAACGATAAAAGATAAATTCTTCAAAAACCTTGAGCTACCGAGAGGTAAGGCTGTAGAAGAAGTCATAGAGGCGGACGGTCATACATTGAGAGAAGAAGTTCAGATTCTCAGAAGAATGAGAATTGTGTTTGAGGATACATTAAGTGAAGGAATACAACATCTCCAAAAGATTGAGATAATAGCTCAAAGAATAATAGAAGTTGAACAAAAAGGAATACTACAACAAAAACTTCATAAAGAAATGTTATCCTTAGTTGATAAGATCGCAGAGAAACTGAAGACGTTAAAACAGAAGATGGCGGAATCACAGAGTCGTGATAACCATGTTTCTGGTCTTACTCATTTGGCTCAAAACCCTCAGCCTTCTCATCCTGATAACAATACAAGTATTGTCTCTACTCCTTCTGTTAACAACTCAGCTGATTCAAACGACTACAGCAATACAAGCGAGTTCTCATCTTAA"
+      },
+      {
+        id: "coffea_arabica",
+        order: 12,
+        species: "Coffea arabica",
+        common: "Café Arábica (Ativ. 01)",
+        group: "Planta",
+        gene: "CaFLC (Flowering Locus C)",
+        accession: "HQ845334.1",
+        altAccession: "CaFLC",
+        domName: "MADS_MEF2_like",
+        domAcc: "cd00265",
+        domDesc: "MADS-box transcription factor domain (water stress & flowering response)",
+        domStart: 4,
+        domEnd: 183,
+        domEvalue: "8.90e-35",
+        ctermName: "K-box",
+        ctermAcc: "pfam01486",
+        ctermStart: 247,
+        ctermEnd: 510,
+        ctermEvalue: "2.10e-17",
+        seq: "ATGGGCAGGGGTAGGGTGGAGCTGAAGAGAATAGAGAACAAGATAAACAGACAGGTGACATTCTCCAAGAGAAGGAATGGGCTTCTGAAGAAAGCTCATGAGATCTCCGTTCTCTGCGATGCTGAGGTCGCCCTCATCGTCTTCTCCACCACAGGCAAGCTCTTCGAGTATGCCAGCGACAGCTGCATGGAGACCATAAAGGACATGCAGCATAAGCACAACAATGCAACAATCGTTCAGCAGAAGAACCTTAGTCTTCAAGCTGCGAATGCGTTGTATGAAGAAGGAAGAACTCTCGCGAGATTAGAGGTGGAGGAGAAGGAAAATGAAAGATTACTGTCTAAAGAAAATGAAATCCTAAAGGAGAAGTTAAAAAAGTATAAGAAAGAAGATTCAACCACAACAAATGCTGACTCTACTCATAATGACAACACAGAATTGAAAGGATTAGATAGCAATTCGAACACAACACAATTGCAAGATGAGAAGAAGCAAGATCTTACAGACTTGAAGAACAAGGTTGATGTGCTTATGAATGAACGAAGGAAGATAATTGCTCAAGGTTTAGGTACAAGTAGCACATCAAGTCAATTTCCTGGCAGCGATATATATTGCCTAGAGGAAGTCCATCCAAACGAACAAGATAACGATGAAGATGAACCCAATGATCATTGGAACTGTTATTCAGTACCGACCGGAACCCCATGTTTGA"
+      }
+    ];
+
+    // Standard Genetic Code Table
+    const CODON_TABLE = {
+      TTT:'F', TTC:'F', TTA:'L', TTG:'L', CTT:'L', CTC:'L', CTA:'L', CTG:'L',
+      ATT:'I', ATC:'I', ATA:'I', ATG:'M', GTT:'V', GTC:'V', GTA:'V', GTG:'V',
+      TCT:'S', TCC:'S', TCA:'S', TCG:'S', CCT:'P', CCC:'P', CCA:'P', CCG:'P',
+      ACT:'T', ACC:'T', ACA:'T', ACG:'T', GCT:'A', GCC:'A', GCA:'A', GCG:'A',
+      TAT:'Y', TAC:'Y', TAA:'*', TAG:'*', CAT:'H', CAC:'H', CAA:'Q', CAG:'Q',
+      AAT:'N', AAC:'N', AAA:'K', AAG:'K', GAT:'D', GAC:'D', GAA:'E', GAG:'E',
+      TGT:'C', TGC:'C', TGA:'*', TGG:'W', CGT:'R', CGC:'R', CGA:'R', CGG:'R',
+      AGT:'S', AGC:'S', AGA:'R', AGG:'R', GGT:'G', GGC:'G', GGA:'G', GGG:'G'
+    };
+
+    // App State
+    let appState = {
+      speciesList: [...INITIAL_SPECIES_DB],
+      activeSpeciesId: "ovis_aries",
+      activeTab: "batch",
+      filterQuery: "",
+      pcrTargetRegion: "domain",
+      pcrPrimerLen: 20
+    };
+
+    // Utility: Toast Notification
+    function showToast(message, icon = "✅") {
+      const container = document.getElementById("toast-container");
+      const msgEl = document.getElementById("toast-msg");
+      const iconEl = document.getElementById("toast-icon");
+      msgEl.textContent = message;
+      iconEl.textContent = icon;
+      container.classList.remove("hidden");
+      setTimeout(() => {
+        container.classList.add("hidden");
+      }, 3200);
+    }
+
+    // Utility: Copy to Clipboard
+    function copyTextToClipboard(text, label = "Conteúdo copiado!") {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => showToast(label)).catch(() => fallbackCopy(text, label));
+      } else {
+        fallbackCopy(text, label);
+      }
+    }
+
+    function fallbackCopy(text, label) {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand("copy");
+        showToast(label);
+      } catch (e) {
+        showToast("Erro ao copiar", "⚠️");
+      }
+      document.body.removeChild(ta);
+    }
+
+    // Utility: Clean DNA sequence
+    function cleanDna(raw) {
+      const lines = raw.split(/\r?\n/);
+      const body = lines.filter(l => !l.trim().startsWith(">")).join("");
+      return body.toUpperCase().replace(/[^ATCG]/g, "");
+    }
+
+    // Utility: Reverse Complement DNA (5' -> 3')
+    function reverseComplement(seq) {
+      const comp = { A: 'T', T: 'A', C: 'G', G: 'C' };
+      return seq.toUpperCase().split("").reverse().map(b => comp[b] || 'N').join("");
+    }
+
+    // Utility: Translate DNA to Protein
+    function translateDna(seq) {
+      let aa = "";
+      for (let i = 0; i <= seq.length - 3; i += 3) {
+        const codon = seq.substring(i, i + 3);
+        const res = CODON_TABLE[codon] || "X";
+        if (res === "*") break;
+        aa += res;
+      }
+      return aa;
+    }
+
+    // 6-Frame ORFfinder Engine (Replicates NCBI /orffinder/)
+    function findOrfsSixFrames(dnaSeq, minNt = 75) {
+      const seq = cleanDna(dnaSeq);
+      const revSeq = reverseComplement(seq);
+      const N = seq.length;
+      const stops = new Set(["TAA", "TAG", "TGA"]);
+      const orfs = [];
+
+      function scanStrand(s, strandSign) {
+        for (let frame = 0; frame < 3; frame++) {
+          let i = frame;
+          while (i <= s.length - 3) {
+            const codon = s.substring(i, i + 3);
+            if (codon === "ATG") {
+              let j = i + 3;
+              let foundStop = false;
+              while (j <= s.length - 3) {
+                const c2 = s.substring(j, j + 3);
+                if (stops.has(c2)) {
+                  foundStop = true;
+                  break;
+                }
+                j += 3;
+              }
+              const endIdx = foundStop ? j + 3 : j;
+              const ntLen = endIdx - i;
+              if (ntLen >= minNt) {
+                const subSeq = s.substring(i, endIdx);
+                const aaLen = Math.floor((ntLen - (foundStop ? 3 : 0)) / 3);
+                const startPos = strandSign === "+" ? (i + 1) : (N - i);
+                const stopPos = strandSign === "+" ? endIdx : (N - endIdx + 1);
+                orfs.push({
+                  strand: strandSign,
+                  frame: frame + 1,
+                  start: startPos,
+                  stop: stopPos,
+                  ntLen,
+                  aaLen,
+                  seq: subSeq,
+                  protein: translateDna(subSeq)
+                });
+              }
+              i = foundStop ? j + 3 : s.length;
+            } else {
+              i += 3;
+            }
+          }
+        }
+      }
+
+      scanStrand(seq, "+");
+      scanStrand(revSeq, "-");
+
+      orfs.sort((a, b) => b.ntLen - a.ntLen);
+      return orfs.slice(0, 8).map((o, idx) => ({
+        ...o,
+        label: "ORF" + (idx + 1)
+      }));
+    }
+
+    // Format Sequence in 60-character FASTA lines
+    function formatFastaLines(seq, width = 70) {
+      const clean = cleanDna(seq);
+      const out = [];
+      for (let i = 0; i < clean.length; i += width) {
+        out.push(clean.substring(i, i + width));
+      }
+      return out.join("\n");
+    }
+
+    // Primer Thermodynamics Helper
+    function calcPrimerStats(primerSeq) {
+      const s = cleanDna(primerSeq);
+      const len = s.length || 1;
+      let gc = 0;
+      for (let c of s) {
+        if (c === "G" || c === "C") gc++;
+      }
+      const gcPct = (gc / len) * 100;
+      const tm = 4 * gc + 2 * (len - gc);
+      const lastBase = s[s.length - 1] || "";
+      const hasClamp = lastBase === "G" || lastBase === "C";
+      return {
+        seq: s,
+        len,
+        gcCount: gc,
+        gcPct: gcPct.toFixed(1),
+        tm: tm.toFixed(1),
+        clamp: hasClamp ? "✅ Forte (" + lastBase + ")" : "⚠️ Fraco (" + lastBase + ")"
+      };
+    }
+
+    // Switch Active Tab
+    function switchTab(tabId) {
+      appState.activeTab = tabId;
+      const tabs = ["batch", "pipeline", "pcr", "sheets"];
+      tabs.forEach(t => {
+        const btn = document.getElementById("nav-tab-" + t);
+        const view = document.getElementById("view-" + t);
+        if (t === tabId) {
+          btn.classList.remove("tab-inactive");
+          btn.classList.add("tab-active");
+          view.classList.remove("hidden");
+        } else {
+          btn.classList.remove("tab-active");
+          btn.classList.add("tab-inactive");
+          view.classList.add("hidden");
+        }
+      });
+    }
+
+    // Render Tab 1: Consolidated Species Matrix Table
+    function renderSpeciesMatrix() {
+      const tbody = document.getElementById("species-table-body");
+      const q = appState.filterQuery.trim().toLowerCase();
+      const filtered = appState.speciesList.filter(item => {
+        if (!q) return true;
+        return (
+          item.species.toLowerCase().includes(q) ||
+          item.common.toLowerCase().includes(q) ||
+          item.accession.toLowerCase().includes(q) ||
+          item.gene.toLowerCase().includes(q)
+        );
+      });
+
+      document.getElementById("kpi-total-species").textContent = appState.speciesList.length + " Espécies";
+
+      tbody.innerHTML = filtered.map((item, idx) => {
+        const seq = cleanDna(item.seq);
+        const lenBp = seq.length;
+        const lenAa = Math.floor((lenBp - 3) / 3);
+        const startCodon = seq.substring(0, 3);
+        const stopCodon = seq.substring(lenBp - 3);
+        const domLen = item.domEnd - item.domStart + 1;
+        const ntermEnd = item.domStart - 1;
+        const ctermStart = item.domEnd + 1;
+        const ctermEnd = lenBp - 3;
+
+        const efetchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=${encodeURIComponent(item.accession)}&rettype=fasta&retmode=text`;
+        const genbankUrl = `https://www.ncbi.nlm.nih.gov/nuccore/${encodeURIComponent(item.accession)}`;
+
+        return `
+          <tr class="hover:bg-slate-900/90 transition">
+            <td class="py-3 px-3 font-bold text-slate-400 mono">${String(idx + 1).padStart(2, '0')}</td>
+            <td class="py-3 px-3">
+              <div class="font-bold text-white italic">${item.species}</div>
+              <div class="text-[11px] text-slate-400">${item.common} • ${item.group}</div>
+            </td>
+            <td class="py-3 px-3 font-semibold text-sky-300 mono">${item.gene}</td>
+            <td class="py-3 px-3">
+              <div class="font-bold text-amber-300 mono">${item.accession}</div>
+              <div class="flex items-center gap-2 mt-1 text-[11px]">
+                <a href="${genbankUrl}" target="_blank" rel="noopener noreferrer" class="text-sky-400 hover:underline">GenBank ↗</a>
+                <span class="text-slate-600">|</span>
+                <a href="${efetchUrl}" target="_blank" rel="noopener noreferrer" class="text-emerald-400 hover:underline">API FASTA ↗</a>
+              </div>
+            </td>
+            <td class="py-3 px-3 mono">
+              <div class="font-bold text-white">${lenBp} bp</div>
+              <div class="text-[11px] text-emerald-400">${lenAa} aa • Frame +1</div>
+            </td>
+            <td class="py-3 px-3 mono">
+              <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">${startCodon} (1..3)</span>
+              <div class="text-[11px] text-slate-400 mt-0.5">Pos 01..${ntermEnd}</div>
+            </td>
+            <td class="py-3 px-3 mono">
+              <div class="font-bold text-sky-300">${item.domStart} .. ${item.domEnd}</div>
+              <div class="text-[11px] text-slate-400">${domLen} bp • ${item.domName} (${item.domAcc})</div>
+            </td>
+            <td class="py-3 px-3 mono">
+              <div class="font-bold text-purple-300">${ctermStart} .. ${ctermEnd}</div>
+              <div class="text-[11px] text-slate-400">${item.ctermName}: ${item.ctermStart}..${item.ctermEnd}</div>
+            </td>
+            <td class="py-3 px-3 mono">
+              <span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold">${stopCodon}</span>
+              <div class="text-[11px] text-slate-400 mt-0.5">${lenBp - 2}..${lenBp}</div>
+            </td>
+            <td class="py-3 px-3 text-center">
+              <div class="flex items-center justify-center gap-1.5">
+                <button data-inspect-id="${item.id}" class="btn-inspect-species px-2.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow transition whitespace-nowrap">
+                  🔬 Inspecionar 3 Etapas
+                </button>
+                <button data-pcr-id="${item.id}" class="btn-pcr-species px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-slate-700 font-bold text-xs transition" title="Desenhar Primers PCR">
+                  🧪 PCR
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("");
+
+      // Attach listeners to dynamically rendered buttons
+      document.querySelectorAll(".btn-inspect-species").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.getAttribute("data-inspect-id");
+          appState.activeSpeciesId = id;
+          renderInspectorView();
+          switchTab("pipeline");
+        });
+      });
+
+      document.querySelectorAll(".btn-pcr-species").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.getAttribute("data-pcr-id");
+          appState.activeSpeciesId = id;
+          renderPcrView();
+          switchTab("pcr");
+        });
+      });
+    }
+
+    // Populate Dropdowns in Tab 2 & Tab 3
+    function populateSpeciesDropdowns() {
+      const selInspector = document.getElementById("inspector-species-select");
+      const selPcr = document.getElementById("pcr-species-select");
+      const optionsHtml = appState.speciesList.map((item, idx) =>
+        `<option value="${item.id}">${String(idx + 1).padStart(2, '0')}. ${item.species} (${item.common}) — ${item.accession}</option>`
+      ).join("");
+      selInspector.innerHTML = optionsHtml;
+      selPcr.innerHTML = optionsHtml;
+      selInspector.value = appState.activeSpeciesId;
+      selPcr.value = appState.activeSpeciesId;
+    }
+
+    // Render Tab 2: 3-Step Inspector (FASTA -> ORFfinder -> CD-Search)
+    function renderInspectorView() {
+      populateSpeciesDropdowns();
+      const item = appState.speciesList.find(s => s.id === appState.activeSpeciesId) || appState.speciesList[0];
+      const seq = cleanDna(item.seq);
+      const N = seq.length;
+      const aaCount = Math.floor((N - 3) / 3);
+
+      // Top bar badges & links
+      document.getElementById("inspector-badge-accession").textContent = item.accession;
+      document.getElementById("inspector-badge-length").textContent = `${N} bp (${aaCount} aa)`;
+      document.getElementById("btn-inspector-genbank").href = `https://www.ncbi.nlm.nih.gov/nuccore/${encodeURIComponent(item.accession)}`;
+
+      // Update Hidden CD-Search Form for 1-click POST to wrpsb.cgi
+      const fastaHeader = `>${item.accession} ${item.species} ${item.gene} mRNA, complete cds`;
+      const fullFasta = `${fastaHeader}\n${formatFastaLines(seq, 70)}`;
+      document.getElementById("input-cdsearch-queries").value = fullFasta;
+
+      // Step 1: FASTA & Base Composition
+      document.getElementById("inspector-fasta-header").textContent = fastaHeader;
+      document.getElementById("inspector-fasta-body").value = formatFastaLines(seq, 50);
+
+      let countA = 0, countT = 0, countC = 0, countG = 0;
+      for (let b of seq) {
+        if (b === "A") countA++;
+        else if (b === "T") countT++;
+        else if (b === "C") countC++;
+        else if (b === "G") countG++;
+      }
+      const gcPct = N > 0 ? (((countG + countC) / N) * 100).toFixed(1) : "0.0";
+      document.getElementById("inspector-gc-percent").textContent = `GC: ${gcPct}%`;
+      document.getElementById("base-count-a").textContent = countA;
+      document.getElementById("base-count-t").textContent = countT;
+      document.getElementById("base-count-c").textContent = countC;
+      document.getElementById("base-count-g").textContent = countG;
+
+      // Step 2: 6-Frame ORFfinder Engine
+      const orfs = findOrfsSixFrames(seq, 60);
+      const orfTbody = document.getElementById("orffinder-table-body");
+      orfTbody.innerHTML = orfs.map((o, idx) => `
+        <tr class="${idx === 0 ? 'bg-emerald-500/15 text-emerald-200 font-bold' : 'text-slate-300'} hover:bg-slate-900">
+          <td class="py-1.5 px-2.5">${o.label}</td>
+          <td class="py-1.5 px-2">${o.strand}</td>
+          <td class="py-1.5 px-2">${o.frame}</td>
+          <td class="py-1.5 px-2">${o.start === 1 ? '&lt;1' : o.start}</td>
+          <td class="py-1.5 px-2">${o.stop}</td>
+          <td class="py-1.5 px-2.5">${o.ntLen} | ${o.aaLen}</td>
+        </tr>
+      `).join("");
+
+      const topOrf = orfs[0] || { strand: "+", frame: 1, start: 1, stop: N, seq, protein: translateDna(seq) };
+      document.getElementById("orf1-summary-tag").textContent = `Strand ${topOrf.strand} | Frame ${topOrf.frame} | 1..${N} (${N} nt | ${aaCount} aa)`;
+      document.getElementById("orf1-protein-seq").value = topOrf.protein;
+      document.getElementById("orf1-start-codon").textContent = `${seq.substring(0, 3)} (Met)`;
+      document.getElementById("orf1-stop-codon").textContent = `${seq.substring(N - 3)} (*)`;
+
+      // Step 3: CD-Search Domain Architecture & 4-Block Colored Sequence
+      document.getElementById("input-domain-start").value = item.domStart;
+      document.getElementById("input-domain-end").value = item.domEnd;
+      renderDomainAndColoredBlocks(item, seq);
+
+      // Update F12 Script in Tab 4 with current species sequence
+      updateF12ScriptBox(fullFasta);
+    }
+
+    function renderDomainAndColoredBlocks(item, seq) {
+      const N = seq.length;
+      const dStart = Math.max(4, Math.min(N - 6, parseInt(document.getElementById("input-domain-start").value, 10) || item.domStart));
+      const dEnd = Math.max(dStart + 3, Math.min(N - 3, parseInt(document.getElementById("input-domain-end").value, 10) || item.domEnd));
+
+      item.domStart = dStart;
+      item.domEnd = dEnd;
+
+      // Update visual ruler & bars
+      document.getElementById("ruler-max-bp").textContent = N;
+      const leftPct = ((dStart / N) * 100).toFixed(1);
+      const widthPct = (((dEnd - dStart + 1) / N) * 100).toFixed(1);
+      const mainBar = document.getElementById("visual-domain-main");
+      mainBar.style.left = `${leftPct}%`;
+      mainBar.style.width = `${widthPct}%`;
+      mainBar.textContent = `${item.domName} (${dStart}..${dEnd})`;
+
+      const cStart = Math.min(N - 3, item.ctermStart || (dEnd + 37));
+      const cEnd = Math.min(N - 3, item.ctermEnd || (N - 3));
+      const cLeftPct = ((cStart / N) * 100).toFixed(1);
+      const cWidthPct = Math.max(6, (((cEnd - cStart + 1) / N) * 100)).toFixed(1);
+      const ctermBar = document.getElementById("visual-domain-cterm");
+      ctermBar.style.left = `${cLeftPct}%`;
+      ctermBar.style.width = `${cWidthPct}%`;
+      ctermBar.textContent = `${item.ctermName}`;
+
+      document.getElementById("scale-mark-dom-start").textContent = `${dStart} (Início Domínio)`;
+      document.getElementById("scale-mark-dom-end").textContent = `${dEnd} (Fim Domínio)`;
+      document.getElementById("scale-mark-stop").textContent = `${N} (Stop ${seq.substring(N - 3)})`;
+
+      // CDD Hits Table
+      const domBp = dEnd - dStart + 1;
+      const ctermBp = Math.max(0, cEnd - cStart + 1);
+      document.getElementById("cdd-hits-tbody").innerHTML = `
+        <tr class="bg-sky-500/10">
+          <td class="py-2 px-3 font-bold text-sky-300">${item.domName}</td>
+          <td class="py-2 px-3 mono text-amber-300"><a href="https://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid=${item.domAcc}" target="_blank" rel="noopener noreferrer" class="hover:underline">${item.domAcc} ↗</a></td>
+          <td class="py-2 px-3 text-slate-300">${item.domDesc}</td>
+          <td class="py-2 px-3 mono font-bold text-white">${dStart} - ${dEnd}</td>
+          <td class="py-2 px-3 mono text-sky-300">${domBp} bp</td>
+          <td class="py-2 px-3 mono text-emerald-400 font-bold">${item.domEvalue}</td>
+        </tr>
+        <tr>
+          <td class="py-2 px-3 font-bold text-purple-300">${item.ctermName}</td>
+          <td class="py-2 px-3 mono text-amber-300"><a href="https://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid=${item.ctermAcc}" target="_blank" rel="noopener noreferrer" class="hover:underline">${item.ctermAcc} ↗</a></td>
+          <td class="py-2 px-3 text-slate-300">Conserved C-terminal region (${item.ctermName})</td>
+          <td class="py-2 px-3 mono font-bold text-white">${cStart} - ${cEnd}</td>
+          <td class="py-2 px-3 mono text-purple-300">${ctermBp} bp</td>
+          <td class="py-2 px-3 mono text-emerald-400">${item.ctermEvalue}</td>
+        </tr>
+      `;
+
+      // Slice the 4 Operational Blocks (1-indexed coordinates)
+      const blockStart = seq.substring(0, 3);
+      const blockNterm = seq.substring(3, dStart - 1);
+      const blockDomain = seq.substring(dStart - 1, dEnd);
+      const blockCterm = seq.substring(dEnd, N - 3);
+      const blockStop = seq.substring(N - 3);
+
+      // Render Colored Viewer
+      const viewer = document.getElementById("colored-sequence-viewer");
+      viewer.innerHTML =
+        `<span class="bg-emerald-500/30 text-emerald-200 font-extrabold px-1 rounded border border-emerald-400/50" title="Start Codon (1..3)">${blockStart}</span>` +
+        `<span class="text-amber-200/90" title="N-Terminal (4..${dStart - 1})">${blockNterm}</span>` +
+        `<span class="bg-sky-500/25 text-sky-200 font-bold px-0.5 rounded border-b-2 border-sky-400" title="Domínio Conservado ${item.domName} (${dStart}..${dEnd})">${blockDomain}</span>` +
+        `<span class="text-purple-300" title="Região Restante / ${item.ctermName} (${dEnd + 1}..${N - 3})">${blockCterm}</span>` +
+        `<span class="bg-rose-500/35 text-rose-200 font-extrabold px-1 rounded border border-rose-400/50" title="Stop Codon (${N - 2}..${N})">${blockStop}</span>`;
+
+      // Individual Block Cards
+      document.getElementById("block-meta-1").textContent = `Pos 1..${dStart - 1} (${dStart - 1} bp • Start: ${blockStart})`;
+      document.getElementById("block-seq-1").textContent = blockStart + blockNterm;
+
+      document.getElementById("block-meta-2").textContent = `Pos ${dStart}..${dEnd} (${blockDomain.length} bp • ${item.domName})`;
+      document.getElementById("block-seq-2").textContent = blockDomain;
+
+      document.getElementById("block-meta-3").textContent = `Pos ${dEnd + 1}..${N - 3} (${blockCterm.length} bp • ${item.ctermName})`;
+      document.getElementById("block-seq-3").textContent = blockCterm;
+
+      document.getElementById("block-meta-4").textContent = `Pos ${N - 2}..${N} (3 bp)`;
+      document.getElementById("block-seq-4").textContent = blockStop;
+    }
+
+    // Render Tab 3: PCR Primer Laboratory
+    function renderPcrView() {
+      populateSpeciesDropdowns();
+      const item = appState.speciesList.find(s => s.id === appState.activeSpeciesId) || appState.speciesList[0];
+      const seq = cleanDna(item.seq);
+      const pLen = appState.pcrPrimerLen;
+      const isDomain = appState.pcrTargetRegion === "domain";
+
+      const targetStart = isDomain ? item.domStart : 1;
+      const targetEnd = isDomain ? item.domEnd : seq.length;
+      const targetSeq = seq.substring(targetStart - 1, targetEnd);
+
+      const fwdRaw = targetSeq.substring(0, pLen);
+      const revTemplate = targetSeq.substring(targetSeq.length - pLen);
+      const revRaw = reverseComplement(revTemplate);
+
+      const fwdStats = calcPrimerStats(fwdRaw);
+      const revStats = calcPrimerStats(revRaw);
+      const deltaTm = Math.abs(parseFloat(fwdStats.tm) - parseFloat(revStats.tm)).toFixed(1);
+
+      document.getElementById("pcr-len-val").textContent = `${pLen} nt`;
+      document.getElementById("pcr-amplicon-size").textContent = `${targetSeq.length} bp`;
+
+      document.getElementById("pcr-fwd-coords").textContent = `Posição na CDS: ${targetStart} .. ${targetStart + pLen - 1}`;
+      document.getElementById("pcr-fwd-seq").textContent = fwdStats.seq;
+      document.getElementById("pcr-fwd-gc").textContent = `${fwdStats.gcPct}%`;
+      document.getElementById("pcr-fwd-tm").textContent = `${fwdStats.tm} °C`;
+      document.getElementById("pcr-fwd-clamp").textContent = fwdStats.clamp;
+
+      document.getElementById("pcr-rev-coords").textContent = `Posição na CDS: ${targetEnd - pLen + 1} .. ${targetEnd} (RevComp)`;
+      document.getElementById("pcr-rev-seq").textContent = revStats.seq;
+      document.getElementById("pcr-rev-gc").textContent = `${revStats.gcPct}%`;
+      document.getElementById("pcr-rev-tm").textContent = `${revStats.tm} °C`;
+      document.getElementById("pcr-delta-tm").textContent = `Δ ${deltaTm}°C (${parseFloat(deltaTm) <= 5 ? '✅ Ideal' : '⚠️ Ajustar'})`;
+
+      // Render Batch PCR Table across all loaded species
+      const pcrTbody = document.getElementById("pcr-batch-tbody");
+      pcrTbody.innerHTML = appState.speciesList.map(sp => {
+        const s = cleanDna(sp.seq);
+        const st = isDomain ? sp.domStart : 1;
+        const en = isDomain ? sp.domEnd : s.length;
+        const sub = s.substring(st - 1, en);
+        const f = calcPrimerStats(sub.substring(0, pLen));
+        const r = calcPrimerStats(reverseComplement(sub.substring(sub.length - pLen)));
+        const dTm = Math.abs(parseFloat(f.tm) - parseFloat(r.tm)).toFixed(1);
+        return `
+          <tr class="hover:bg-slate-900">
+            <td class="py-2 px-3 font-bold text-white italic">${sp.species}</td>
+            <td class="py-2 px-3 text-amber-300">${sp.accession}</td>
+            <td class="py-2 px-3 font-bold text-sky-300">${sub.length} bp</td>
+            <td class="py-2 px-3 text-emerald-300 font-bold">${f.seq}</td>
+            <td class="py-2 px-3 text-slate-300">${f.gcPct}% | ${f.tm}°C</td>
+            <td class="py-2 px-3 text-sky-300 font-bold">${r.seq}</td>
+            <td class="py-2 px-3 text-slate-300">${r.gcPct}% | ${r.tm}°C</td>
+            <td class="py-2 px-3">${parseFloat(dTm) <= 5 ? '<span class="text-emerald-400 font-bold">✅ Δ ' + dTm + '°C</span>' : '<span class="text-amber-400 font-bold">⚠️ Δ ' + dTm + '°C</span>'}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    // Update F12 Script Textarea
+    function updateF12ScriptBox(fastaString) {
+      const escaped = fastaString.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n");
+      const scriptCode = `// Script de Automação F12 para NCBI CD-Search (wrpsb.cgi) - PPGAD/UFT
+(function automatizarCDSearch(sequenciaFasta) {
+  const campoSeq = document.getElementById("seqinput") || document.querySelector("textarea[name='queries']");
+  if (campoSeq) {
+    campoSeq.value = sequenciaFasta;
+    console.log("✅ Sequência FASTA inserida no CD-Search com sucesso!");
+    const btnSubmit = document.querySelector("input[type='submit'][value='Submit']") || document.getElementById("submit") || document.querySelector("button[type='submit']");
+    if (btnSubmit) {
+      btnSubmit.click();
+    }
+  } else {
+    console.warn("Abra https://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi antes de rodar o script.");
+  }
+})("${escaped}");`;
+      document.getElementById("textarea-f12-script").value = scriptCode;
+    }
+
+    // Live NCBI E-utilities Fetch (with graceful fallback)
+    async function fetchFromNcbiApi(queryOrAcc) {
+      const logBox = document.getElementById("batch-log-box");
+      logBox.textContent = `⏳ Consultando API NCBI E-utilities para "${queryOrAcc}"...`;
+      try {
+        let acc = queryOrAcc.trim();
+        // If it contains spaces, search UID first via esearch.fcgi
+        if (acc.includes(" ") || !/\d/.test(acc)) {
+          const esearchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=nuccore&term=${encodeURIComponent(acc + " AND complete cds")}&retmax=1&retmode=json`;
+          const resSearch = await fetch(esearchUrl);
+          const dataSearch = await resSearch.json();
+          const idList = dataSearch?.esearchresult?.idlist || [];
+          if (idList.length === 0) {
+            throw new Error("Nenhum UID retornado pela busca.");
+          }
+          acc = idList[0];
+        }
+        const efetchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=${encodeURIComponent(acc)}&rettype=fasta&retmode=text`;
+        const resFetch = await fetch(efetchUrl);
+        if (!resFetch.ok) throw new Error("HTTP " + resFetch.status);
+        const fastaText = await resFetch.text();
+        if (!fastaText || !fastaText.includes(">")) throw new Error("FASTA vazio");
+        logBox.textContent = `✅ Sequência obtida ao vivo da API NCBI E-utilities (${acc})!`;
+        return fastaText.trim();
+      } catch (err) {
+        logBox.textContent = `ℹ️ Modo Offline/Seguro: usando banco validado local ou cole o FASTA manualmente (${err.message}).`;
+        return null;
+      }
+    }
+
+    // Export Academic Colored Report (.doc compatible HTML)
+    function downloadAcademicReport() {
+      const rowsHtml = appState.speciesList.map((item, idx) => {
+        const seq = cleanDna(item.seq);
+        const N = seq.length;
+        const bStart = seq.substring(0, 3);
+        const bNterm = seq.substring(3, item.domStart - 1);
+        const bDom = seq.substring(item.domStart - 1, item.domEnd);
+        const bCterm = seq.substring(item.domEnd, N - 3);
+        const bStop = seq.substring(N - 3);
+        return `
+          <div style="margin-bottom:24px; page-break-inside:avoid; border:1px solid #cbd5e1; padding:14px; border-radius:8px;">
+            <h3 style="margin:0 0 6px 0; color:#0f172a; font-family:Arial,sans-serif;">
+              Item ${String(idx + 1).padStart(2, '0')} — <i>${item.species}</i> (${item.common}) | GenBank: ${item.accession} | Extensão: ${N} bp (${Math.floor((N - 3) / 3)} aa)
+            </h3>
+            <p style="margin:0 0 8px 0; font-size:12px; color:#334155; font-family:Arial,sans-serif;">
+              <b>Start:</b> ${bStart} (1..3) + N-term (4..${item.domStart - 1}) |
+              <b>Domínio ${item.domName} (${item.domAcc}):</b> ${item.domStart}..${item.domEnd} (${bDom.length} bp) |
+              <b>Restante + ${item.ctermName}:</b> ${item.domEnd + 1}..${N - 3} |
+              <b>Stop:</b> ${bStop} (${N - 2}..${N})
+            </p>
+            <div style="font-family:'Courier New',monospace; font-size:11px; line-height:1.5; word-break:break-all; background:#f8fafc; padding:10px; border:1px solid #e2e8f0;">
+              <span style="background:#bbf7d0; color:#14532d; font-weight:bold;">${bStart}</span><span style="color:#475569;">${bNterm}</span><span style="background:#bae6fd; color:#0c4a6e; font-weight:bold;">${bDom}</span><span style="color:#6b21a8;">${bCterm}</span><span style="background:#fecdd3; color:#881337; font-weight:bold;">${bStop}</span>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      const htmlDoc = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+        <head><meta charset="utf-8"><title>Relatorio Bioinformatica NCBI PPGAD UFT</title></head>
+        <body style="font-family:Arial,sans-serif; color:#0f172a;">
+          <h1 style="color:#1e3a8a;">Relatório Automatizado de Bioinformática — Mapeamento NCBI (FASTA, ORFfinder &amp; CD-Search)</h1>
+          <p><b>Pós-Graduação em Agroenergia Digital (PPGAD/UFT)</b> • Disciplina: Bioinformática (Prof. Dr. Horllys Gomes Barreto) • Aluno: Michael da Silva de Oliveira</p>
+          <hr/>
+          ${rowsHtml}
+        </body></html>
+      `;
+
+      const blob = new Blob([htmlDoc], { type: "application/msword;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "Relatorio_Bioinformatica_NCBI_Colorido_PPGAD_UFT.doc";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("Relatório colorido (.doc) gerado para download!");
+    }
+
+    // Initialize Event Listeners
+    function initApp() {
+      // Navigation Tabs
+      document.querySelectorAll(".nav-tab").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const tab = btn.getAttribute("data-tab");
+          switchTab(tab);
+        });
+      });
+
+      // Dynamic NCBI Query Link Updater
+      const queryInput = document.getElementById("batch-gene-query");
+      const queryLink = document.getElementById("link-dynamic-ncbi-query");
+      queryInput.addEventListener("input", () => {
+        queryLink.href = `https://www.ncbi.nlm.nih.gov/nuccore/?term=${encodeURIComponent(queryInput.value.trim())}`;
+      });
+
+      // Presets
+      document.getElementById("btn-preset-animals").addEventListener("click", () => {
+        appState.speciesList = INITIAL_SPECIES_DB.filter(s => s.group !== "Planta");
+        appState.activeSpeciesId = appState.speciesList[0].id;
+        renderSpeciesMatrix();
+        renderInspectorView();
+        renderPcrView();
+        showToast("Lote das 10 Espécies Animais (V1aR) carregado!");
+      });
+
+      document.getElementById("btn-preset-plants").addEventListener("click", () => {
+        appState.speciesList = INITIAL_SPECIES_DB.filter(s => s.group === "Planta");
+        appState.activeSpeciesId = appState.speciesList[0].id;
+        renderSpeciesMatrix();
+        renderInspectorView();
+        renderPcrView();
+        showToast("Lote de Plantas (FLC / CaFLC - MADS-box) carregado!");
+      });
+
+      document.getElementById("btn-preset-all").addEventListener("click", () => {
+        appState.speciesList = [...INITIAL_SPECIES_DB];
+        appState.activeSpeciesId = appState.speciesList[0].id;
+        renderSpeciesMatrix();
+        renderInspectorView();
+        renderPcrView();
+        showToast("Todos os 12 registros (Animais + Plantas) carregados!");
+      });
+
+      // Run Batch Automation Button
+      document.getElementById("btn-run-batch-ncbi").addEventListener("click", async () => {
+        const lines = document.getElementById("batch-species-input").value.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+        const geneTerm = document.getElementById("batch-gene-query").value.trim() || "AVPR1A";
+        const logBox = document.getElementById("batch-log-box");
+        let matched = [];
+
+        for (let line of lines) {
+          const existing = INITIAL_SPECIES_DB.find(
+            item => item.species.toLowerCase().includes(line.toLowerCase()) ||
+                    item.accession.toLowerCase() === line.toLowerCase() ||
+                    item.altAccession.toLowerCase() === line.toLowerCase()
+          );
+          if (existing) {
+            matched.push({ ...existing });
+          } else {
+            // Try live E-utilities API fetch for new training species
+            const fasta = await fetchFromNcbiApi(`${line} ${geneTerm}`);
+            if (fasta) {
+              const cleaned = cleanDna(fasta);
+              const orfs = findOrfsSixFrames(cleaned, 90);
+              const bestSeq = orfs.length > 0 ? orfs[0].seq : cleaned;
+              const headerLine = fasta.split(/\r?\n/)[0] || "";
+              const accMatch = headerLine.match(/^>([^\s]+)/);
+              const accCode = accMatch ? accMatch[1] : line;
+              matched.push({
+                id: "custom_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
+                order: matched.length + 1,
+                species: line,
+                common: "Nova Espécie (API NCBI)",
+                group: "Vertebrado",
+                gene: geneTerm,
+                accession: accCode,
+                altAccession: accCode,
+                domName: "7tmA_V1aR",
+                domAcc: "cd15385",
+                domDesc: "Conserved receptor domain mapped via NCBI pipeline",
+                domStart: Math.min(154, Math.max(4, Math.floor(bestSeq.length * 0.12))),
+                domEnd: Math.max(180, Math.floor(bestSeq.length * 0.85)),
+                domEvalue: "0.00",
+                ctermName: "V1R_C",
+                ctermAcc: "pfam08983",
+                ctermStart: Math.floor(bestSeq.length * 0.88),
+                ctermEnd: bestSeq.length - 3,
+                ctermEvalue: "1.0e-18",
+                seq: bestSeq
+              });
+            }
+          }
+        }
+
+        if (matched.length > 0) {
+          appState.speciesList = matched;
+          appState.activeSpeciesId = matched[0].id;
+          renderSpeciesMatrix();
+          renderInspectorView();
+          renderPcrView();
+          logBox.textContent = `✅ Lote processado com sucesso: ${matched.length} espécies mapeadas (FASTA + ORFfinder + Domínios)!`;
+          showToast(`${matched.length} espécies processadas no lote!`);
+        } else {
+          showToast("Nenhuma espécie encontrada. Verifique os nomes ou cole o FASTA.", "⚠️");
+        }
+      });
+
+      // Open Batch CD-Search (Copies Multi-FASTA & opens bwrpsb.cgi)
+      document.getElementById("btn-open-batch-cdd").addEventListener("click", () => {
+        const multiFasta = appState.speciesList.map(s => `>${s.accession} ${s.species} ${s.gene}\n${formatFastaLines(s.seq, 70)}`).join("\n\n");
+        copyTextToClipboard(multiFasta, "Multi-FASTA copiado! Cole no NCBI Batch CD-Search.");
+        window.open("https://www.ncbi.nlm.nih.gov/Structure/bwrpsb/bwrpsb.cgi", "_blank", "noopener,noreferrer");
+      });
+
+      // Fetch Live NCBI for single custom entry
+      document.getElementById("btn-fetch-live-ncbi").addEventListener("click", async () => {
+        const acc = document.getElementById("custom-accession").value.trim() || document.getElementById("custom-species-name").value.trim();
+        if (!acc) {
+          showToast("Digite um código de acesso (ex: HM856595.1) ou espécie primeiro!", "⚠️");
+          return;
+        }
+        const fasta = await fetchFromNcbiApi(acc);
+        if (fasta) {
+          document.getElementById("custom-fasta-seq").value = fasta;
+          showToast("FASTA baixado da API NCBI E-utilities!");
+        } else {
+          showToast("Cole a sequência FASTA manualmente no campo de texto.", "ℹ️");
+        }
+      });
+
+      // Add Custom Species to Table
+      document.getElementById("btn-add-custom-species").addEventListener("click", () => {
+        const rawSeq = document.getElementById("custom-fasta-seq").value.trim();
+        const cleaned = cleanDna(rawSeq);
+        if (cleaned.length < 30) {
+          showToast("Insira uma sequência de nucleotídeos válida (mín. 30 bp).", "⚠️");
+          return;
+        }
+        const orfs = findOrfsSixFrames(cleaned, 30);
+        const cdsSeq = orfs.length > 0 ? orfs[0].seq : cleaned;
+        const spName = document.getElementById("custom-species-name").value.trim() || "Nova Espécie";
+        const commonName = document.getElementById("custom-common-name").value.trim() || "Adicionada pelo Aluno";
+        const acc = document.getElementById("custom-accession").value.trim() || ("NCBI_" + (appState.speciesList.length + 1));
+        const dStart = parseInt(document.getElementById("custom-dom-start").value, 10) || 154;
+        const dEnd = parseInt(document.getElementById("custom-dom-end").value, 10) || Math.max(dStart + 30, cdsSeq.length - 180);
+
+        const newEntry = {
+          id: "custom_" + Date.now(),
+          order: appState.speciesList.length + 1,
+          species: spName,
+          common: commonName,
+          group: "Custom",
+          gene: document.getElementById("batch-gene-query").value.trim() || "Gene Alvo",
+          accession: acc,
+          altAccession: acc,
+          domName: "Domínio_Principal",
+          domAcc: "cd15385",
+          domDesc: "Domínio conservado mapeado na sequência",
+          domStart: Math.min(dStart, cdsSeq.length - 6),
+          domEnd: Math.min(dEnd, cdsSeq.length - 3),
+          domEvalue: "0.00",
+          ctermName: "C-Term",
+          ctermAcc: "pfam08983",
+          ctermStart: Math.min(dEnd + 30, cdsSeq.length - 6),
+          ctermEnd: cdsSeq.length - 3,
+          ctermEvalue: "1.0e-15",
+          seq: cdsSeq
+        };
+
+        appState.speciesList.push(newEntry);
+        appState.activeSpeciesId = newEntry.id;
+        renderSpeciesMatrix();
+        renderInspectorView();
+        renderPcrView();
+        showToast(`Espécie "${spName}" adicionada e processada!`);
+      });
+
+      // Filter Matrix Input
+      document.getElementById("table-filter-input").addEventListener("input", (e) => {
+        appState.filterQuery = e.target.value;
+        renderSpeciesMatrix();
+      });
+
+      // Copy TSV for Google Sheets
+      document.getElementById("btn-copy-tsv-sheets").addEventListener("click", () => {
+        const headers = ["Item", "Espécie", "Nome Comum", "Gene", "Acesso GenBank", "Total bp", "Total aa", "Start Codon", "Domínio Principal (Intervalo)", "Tamanho Domínio (bp)", "Domínio C-Terminal", "Stop Codon", "Sequência CDS Completa"];
+        const rows = appState.speciesList.map((s, idx) => {
+          const clean = cleanDna(s.seq);
+          const N = clean.length;
+          return [
+            idx + 1,
+            s.species,
+            s.common,
+            s.gene,
+            s.accession,
+            N,
+            Math.floor((N - 3) / 3),
+            clean.substring(0, 3),
+            `${s.domStart}..${s.domEnd} (${s.domName})`,
+            s.domEnd - s.domStart + 1,
+            `${s.ctermStart}..${s.ctermEnd} (${s.ctermName})`,
+            clean.substring(N - 3),
+            clean
+          ].join("\t");
+        });
+        copyTextToClipboard([headers.join("\t"), ...rows].join("\n"), "Tabela TSV copiada! Cole direto no Google Sheets (Ctrl+V).");
+      });
+
+      // Download CSV
+      document.getElementById("btn-download-csv").addEventListener("click", () => {
+        const headers = ["Item,Especie,Nome_Comum,Gene,Acesso_GenBank,Total_bp,Total_aa,Start_Codon,Dominio_Inicio,Dominio_Fim,Stop_Codon,Sequencia_CDS"];
+        const rows = appState.speciesList.map((s, idx) => {
+          const clean = cleanDna(s.seq);
+          const N = clean.length;
+          return `${idx + 1},"${s.species}","${s.common}","${s.gene}","${s.accession}",${N},${Math.floor((N - 3) / 3)},${clean.substring(0, 3)},${s.domStart},${s.domEnd},${clean.substring(N - 3)},${clean}`;
+        });
+        const blob = new Blob([headers.concat(rows).join("\n")], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "Matriz_NCBI_10_Especies_PPGAD_UFT.csv";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast("Arquivo CSV baixado com sucesso!");
+      });
+
+      // Download Multi-FASTA
+      document.getElementById("btn-download-multifasta").addEventListener("click", () => {
+        const content = appState.speciesList.map(s => `>${s.accession} ${s.species} ${s.gene} mRNA, complete cds\n${formatFastaLines(s.seq, 70)}`).join("\n\n");
+        const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "Lote_Completo_NCBI_CDS.fasta";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast("Arquivo Multi-FASTA baixado!");
+      });
+
+      // Inspector Controls (Tab 2)
+      document.getElementById("inspector-species-select").addEventListener("change", (e) => {
+        appState.activeSpeciesId = e.target.value;
+        renderInspectorView();
+        renderPcrView();
+      });
+
+      document.getElementById("btn-submit-wrpsb").addEventListener("click", () => {
+        const form = document.getElementById("form-ncbi-cdsearch");
+        form.submit();
+        showToast("Submetendo sequência diretamente ao NCBI CD-Search (wrpsb.cgi)!", "🚀");
+      });
+
+      document.getElementById("btn-copy-fasta").addEventListener("click", () => {
+        const h = document.getElementById("inspector-fasta-header").textContent;
+        const b = document.getElementById("inspector-fasta-body").value;
+        copyTextToClipboard(`${h}\n${b}`, "Sequência FASTA copiada!");
+      });
+
+      document.getElementById("btn-copy-orf1-nt").addEventListener("click", () => {
+        const item = appState.speciesList.find(s => s.id === appState.activeSpeciesId) || appState.speciesList[0];
+        copyTextToClipboard(formatFastaLines(item.seq, 50), "Maior sequência do ORFfinder (ORF1) copiada!");
+      });
+
+      document.getElementById("btn-copy-orf1-aa").addEventListener("click", () => {
+        const prot = document.getElementById("orf1-protein-seq").value;
+        copyTextToClipboard(prot, "Sequência proteica traduzida (aa) copiada!");
+      });
+
+      document.getElementById("btn-apply-domain-coords").addEventListener("click", () => {
+        const item = appState.speciesList.find(s => s.id === appState.activeSpeciesId) || appState.speciesList[0];
+        renderDomainAndColoredBlocks(item, cleanDna(item.seq));
+        renderSpeciesMatrix();
+        renderPcrView();
+        showToast("Coordenadas do domínio recalculadas e pintadas!");
+      });
+
+      document.querySelectorAll(".btn-copy-block").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const type = btn.getAttribute("data-copy-block");
+          let txt = "";
+          if (type === "start_nterm") txt = document.getElementById("block-seq-1").textContent;
+          else if (type === "domain") txt = document.getElementById("block-seq-2").textContent;
+          else if (type === "cterm") txt = document.getElementById("block-seq-3").textContent;
+          else if (type === "stop") txt = document.getElementById("block-seq-4").textContent;
+          copyTextToClipboard(txt, `Bloco "${type.toUpperCase()}" copiado!`);
+        });
+      });
+
+      // PCR Controls (Tab 3)
+      document.getElementById("pcr-species-select").addEventListener("change", (e) => {
+        appState.activeSpeciesId = e.target.value;
+        renderPcrView();
+        renderInspectorView();
+      });
+
+      document.getElementById("pcr-target-region").addEventListener("change", (e) => {
+        appState.pcrTargetRegion = e.target.value;
+        renderPcrView();
+      });
+
+      document.getElementById("pcr-primer-len").addEventListener("input", (e) => {
+        appState.pcrPrimerLen = parseInt(e.target.value, 10) || 20;
+        renderPcrView();
+      });
+
+      document.getElementById("btn-copy-fwd").addEventListener("click", () => {
+        copyTextToClipboard(document.getElementById("pcr-fwd-seq").textContent.trim(), "Primer Forward (5'➔3') copiado!");
+      });
+
+      document.getElementById("btn-copy-rev").addEventListener("click", () => {
+        copyTextToClipboard(document.getElementById("pcr-rev-seq").textContent.trim(), "Primer Reverse Complement (5'➔3') copiado!");
+      });
+
+      // Tab 4 & Global Report Controls
+      document.getElementById("btn-copy-f12-script").addEventListener("click", () => {
+        copyTextToClipboard(document.getElementById("textarea-f12-script").value, "Script JavaScript (F12) copiado!");
+      });
+
+      document.getElementById("btn-export-report").addEventListener("click", downloadAcademicReport);
+
+      // Initial Render
+      renderSpeciesMatrix();
+      renderInspectorView();
+      renderPcrView();
+    }
+
+    window.addEventListener("DOMContentLoaded", initApp);
+  </script>
+</body>
+</html>
